@@ -1,0 +1,25 @@
+# this is a copy of the actual node_configuration.yaml file. Go to C:\Users\simon\AppData\Local\vantage6\node\node_configuration and change it there as well
+
+application:
+  api_key: api-key-from-server
+  api_path: /api
+  databases:
+    default: C:\Users\simon\PycharmProjects\ppsdg\Code\data
+  encryption:
+    enabled: false
+  logging:
+    backup_count: 5
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    file: node_configuration.log
+    format: '%(asctime)s - %(name)-14s - %(levelname)-8s - %(message)s'
+    level: DEBUG
+    max_size: 1024
+    use_console: true
+  port: '5000'
+  server_url: http://localhost # for local testing; server for actual implementation
+  task_dir: C:\Users\simon\AppData\Local\vantage6\node\node_configuration
+environments:
+  acc: {}
+  dev: {}
+  prod: {}
+  test: {}
