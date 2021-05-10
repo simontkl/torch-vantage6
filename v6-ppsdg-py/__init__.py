@@ -168,7 +168,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
 
 ###### NODE SECTION: These functions will be run at node and coordinated through master function
 
-def initialize_training(rank, group, color, args):
+def RPC_initialize_training(rank, group, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -209,7 +209,7 @@ def initialize_training(rank, group, color, args):
 
 
 
-def train(rank, color, log_interval, model, device, train_loader, optimizer,
+def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
     epoch, round, local_dp, delta=1e-5):
     """
     Training the model on all batches.
@@ -242,7 +242,7 @@ def train(rank, color, log_interval, model, device, train_loader, optimizer,
         print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
 
 
-def test(rank, color, model, device, test_loader):
+def RPC_test(rank, color, model, device, test_loader):
     """
     Tests the model.
 
@@ -275,7 +275,7 @@ def test(rank, color, model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
 
 
-def train_batch(model, device, batch, optimizer, train=True):
+def RPC_train_batch(model, device, batch, optimizer, train=True):
     """
     Training the model on one batch of data.
 
