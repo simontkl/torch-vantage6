@@ -11,12 +11,14 @@ import pandas
 from opacus import PrivacyEngine
 from torch.optim.lr_scheduler import StepLR
 from torchvision.utils import save_image
+from vantage6.tools.util import info, warn
 
 # Own modules
 import v6simplemodel as sm
-import util.parser as parser
+# import util.parser as parser
+import parser as parser
 
-from vantage6.tools.util import info, warn
+
 
 
 def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
