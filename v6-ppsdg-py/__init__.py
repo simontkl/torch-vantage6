@@ -74,36 +74,16 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
 
     parser.parse_arguments()
 
-#
-# def average_parameters_weighted(model, parameters, weights):
-#     """
-#     Calculates the averages for all the model parameters given a list of
-#     parameters and a list of weights. Changes the model parameters to these averages.
-#
-#     Args:
-#         model: The model to change the parameters of.
-#         parameters: A list of lists of tensors, in other words the list contains
-#         an entry for each model parameter, where the entry is a list of tensors
-#         to take the average from for that specific parameter. It assumes that
-#         the parameters from the server are also contained in this list as the
-#         first entry and will be ignored accordingly.
-#         weights: A list of weights for each worker, representing the size of the
-#         dataset at the workernode.
-#     """
-#     i = 0
-#     with torch.no_grad():
-#         for param in model.parameters():
-#             # The first entry of the provided parameters when using dist.gather
-#             # method also contains the value from the server, remove that one
-#             minus_server = parameters[i][1:]
-#             # Calculate the average by summing and dividing by the number of
-#             # workers, taking weights into account
-#             average = sum(x * y for x, y in zip(minus_server, weights)) / sum(weights)
-#             # Change the parameter of the global model to the average
-#             param.data = average
-#             i = i + 1
-#
+
 # # TODO send average parameters weighted to workers like client.send
+
+def average_parameters_weighted(model, parameters, weights):
+    with torch.no_grad():
+        for param in model.parameters():
+            average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
+            param.data = average
+            i = i + 1
+        return parameters
 
 # def fed_avg(rank, color, model, device, args, group, optimizer, train_loader,
 #     test_loader, weights):
@@ -128,45 +108,13 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
 #     Returns:
 #         Returns the final model
 #     """
-#     # Repeat training round
-#     for round in range(1, args.num_rounds + 1):
-#         # Create a subset group
-#         group_size = args.group_size
-#         if args.train_all:
-#             subgroup = group
-#             members = list(range(0, args.num_nodes))
-#             group_size = args.num_nodes - 1
-#         else:
-#             subgroup, members = coor.create_group(color, group_size, args.num_nodes)
-#
-#         # If not the server and either part of subgroup or training on all workers
-#         if (rank !=0) and (args.train_all or (rank in members)):
-#             print("\033[0;{};49m Rank {} is training".format(color, rank))
-#             for epoch in range(1, args.epochs + 1):
-#                 # Train the model on the workers
-#                 train(rank, color, args.log_interval, model, device, train_loader,
-#                     optimizer, epoch, round, args.local_dp)
-#                 # Test the model on the workers
-#                 test(rank, color, model, device, test_loader)
-#
-#         # Gather the parameters after the training round on the server
-#         gather_params = coor.gather_parameters(rank, model, group_size + 1, subgroup) # !!! ???
-#
-#         # If the server
-#         if rank == 0:
-#             # Calculate the average of the parameters and adjust global model
-#             coor.average_parameters_weighted(model, gather_params, weights)
-#
-#         # Send the new model parameters to the workers
-#         coor.broadcast_parameters(model, group)
-#
-#     return model
+
 
 ## TODO: gather paramerters which gathers all the new model parameters from the workers and broadcast after
 
 # TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
 
-###### NODE SECTION: These functions will be run at node and coordinated through master function
+###### NODE SECTION: These functions will be run at node and coordinated through master function; Prefix "RPC_" is required
 
 def RPC_initialize_training(rank, group, color, args):
     """
@@ -205,7 +153,6 @@ def RPC_initialize_training(rank, group, color, args):
         privacy_engine.attach(optimizer)
 
     return device, model, optimizer
-
 
 
 
