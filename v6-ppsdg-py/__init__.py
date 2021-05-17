@@ -67,19 +67,33 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
 
-    model = sm.Net()
+model = sm.Net()
 
-    # TODO federated averaging:
-        # TODO Calculate the average of the parameters and adjust global model
-        # client.create_new_task sends to nodes
-        # results = client.get_results(task_id=task.get("id")) gets results from nodes
+# TODO federated averaging:
+# TODO Calculate the average of the parameters and adjust global model
+# client.create_new_task sends to nodes
+# results = client.get_results(task_id=task.get("id")) gets results from nodes
 
-    parser.parse_arguments()
+parser.parse_arguments()
 
 
 # # TODO send average parameters weighted to workers like client.send
 
+# def get_parameters(client, node):
+#     """
+#     Get parameters from nodes
+#     """
+#
+
+
 def average_parameters_weighted(model, parameters, weights):
+    """
+    Get parameters from nodes and calculate the average
+    :param model: torch model
+    :param parameters: parameters of model
+    :param weights:
+    :return:
+    """
     with torch.no_grad():
         for param in model.parameters():
             average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
@@ -112,7 +126,7 @@ def average_parameters_weighted(model, parameters, weights):
 #     """
 
 
-## TODO: gather paramerters which gathers all the new model parameters from the workers and broadcast after
+# TODO: gather parameters which gathers all the new model parameters from the workers and broadcast after
 
 # TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
 
