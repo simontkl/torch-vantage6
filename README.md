@@ -33,11 +33,6 @@ Contains the client functions.
 
 Contains the PyTorch model (Author: Carlijn Nijhuis).
 
-### v6coordination.py
-
-REVIEW!! "Description: This module contains functions for coordinating the workers and
-server."; But also: average_gradients, average_parameters, average_parameters_weighted which are torch functions and not torch.distributed. Are these needed?? I assume they're calculated locally?
-
 ### v6train.py
 
 The training of the model at node. Original makes use of coordination (which would be my client.py), hence does it need to be incorporated in client.py? 
@@ -49,6 +44,7 @@ Will contain the database partitioning algorithm (according to Yu).
 --------------------
 
 ## Util
+Note: .yaml files are stored elsewhere. These are copies for comparison.
 
 ### entities.yaml
 
@@ -69,43 +65,9 @@ In order for the Docker image to find the methods the algorithm needs to be inst
 
 # TODO
 
-- connect dots between torch.distributed and vantage6
-
-torch.distributed: simplemodel, train, coordination, data, parser, main
-  
-v6: v6simplemodel, v6train, v6coordination (???), client, db, dockerfile, entities, node_configuration, v6server, setup
-
-| dist        | v6           | comment  |
-| ------------- |-------------| -----|
-| simplemodel    | v6simplemodel | part of __init__; node or server? |
-| train   | v6train      |   - node or server? |
-| coordination | v6coordination     |    node or server? need help; reuse, where does it fit into vantage6 as the infrastructure design differs (docker, yaml, client, etc.) |
-| data | db | - at node |
-| parser | - | can I use the same? |
-| main | client?, setup? | ???|
-| - | dockerfile, entitites, node_configuration, v6server | where does that fit in? |
-
-Steps as in example: 
-
-1. Mathematically decompose the model (model already there)
-2. Implement and test locally (http://localhost I suppse)
-3. Vantage6 algorithm wrapper 
-4. Dockerize and push to a registry
-   
-central part of the algorithm needs to be able to create tasks (client.create_new_task). These subtasks are responsible to execute the federated part of the algorithm. node provides the algorithm with a JWT token so that the central part of the algorithm has access to the server to post these subtasks.)
 
 
 Package structure:
-
-```python
-project_folder
-├── Dockerfile
-├── setup.py
-└── algorithm_pkg
-    └── __init__.py
-```
-
-in this case: 
 
 ```python
 vantage6-v2.0
@@ -115,12 +77,11 @@ vantage6-v2.0
     └── __init__.py
     └── client.py
     └── db.py
-    └── v6coordination.py
     └── v6simplemodel.py
     └── v6train.py
 ```
 
-Here, __init__.py is the algorithm which will import v6simplemodel.py, v6train.py (and v6coordination.py?)
+Here, __init__.py is the algorithm which will import v6simplemodel.py, v6train.py, and db.py.
 
 -------- 
 
