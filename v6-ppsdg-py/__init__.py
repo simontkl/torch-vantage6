@@ -104,29 +104,29 @@ def average_parameters_weighted(model, parameters, weights):
             i = i + 1
         return parameters
 
-# def fed_avg(rank, color, model, device, args, group, optimizer, train_loader,
-#     test_loader, weights):
-#     """
-#     Training and testing the model on the workers concurrently using federated
-#     averaging, which means calculating the average of the local model
-#     parameters after a number of (local) epochs each training round.
-#
-#     Args:
-#         rank: The id of the process.
-#         color: The color for the terminal output for this worker.
-#         model: A model to run training on.
-#         device: The device to run training on.
-#         args: The parsed arguments.
-#         group: The world group.
-#         optimizer: Optimization algorithm used for training.
-#         train_loader: Data loader for training data.
-#         test_loader: The data loader for test data.
-#         weights: A list of weights for each worker, representing the size of the
-#         dataset at the workernode, will only be used by the server.
-#
-#     Returns:
-#         Returns the final model
-#     """
+def fed_avg(args, model, optimizer, train_loader, test_loader, device):
+    """
+    Training and testing the model on the workers concurrently using federated
+    averaging, which means calculating the average of the local model
+    parameters after a number of (local) epochs each training round.
+
+
+    Returns:
+        Returns the final model
+    """
+
+    for epoch in range(1, args.epochs + 1):
+        # Train the model on the workers
+        model.train(args.log_interval, model, device, train_loader,
+              optimizer, epoch, round, args.local_dp)
+        # Test the model on the workers
+        model.test(model, device, test_loader)
+
+    gather_params = model.get_parameters()
+
+    model.average_parameters_weighted(gather_params)
+
+    return model
 
 
 # TODO: gather parameters which gathers all the new model parameters from the workers and broadcast after
@@ -175,7 +175,6 @@ def RPC_initialize_training(rank, group, color, args):
         privacy_engine.attach(optimizer)
 
     return device, model, optimizer
-
 
 
 def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
