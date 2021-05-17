@@ -38,7 +38,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         input_={
             'method': 'average_partial',
             'kwargs': {
-                'initialize' : initialize_training() # or what goes here?
+
             }
         },
         organization_ids=ids
@@ -190,7 +190,7 @@ def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
     for batch_idx, (data, target) in enumerate(train_loader):
         # Calculate the loss
         batch = (data, target)
-        loss = train_batch(model, device, batch, optimizer)
+        loss = RPC_train_batch(model, device, batch, optimizer)
         # Log information once every log interval
         if batch_idx % log_interval == 0:
             print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
