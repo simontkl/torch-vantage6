@@ -17,6 +17,7 @@ from vantage6.tools.util import info, warn
 import v6simplemodel as sm
 # import util.parser as parser
 import parser as parser
+import db as db
 
 
 
@@ -67,14 +68,16 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
 
-model = sm.Net()
+  model = sm.Net()
+
+parser.parse_arguments()
 
 # TODO federated averaging:
 # TODO Calculate the average of the parameters and adjust global model
 # client.create_new_task sends to nodes
 # results = client.get_results(task_id=task.get("id")) gets results from nodes
 
-parser.parse_arguments()
+
 
 
 # # TODO send average parameters weighted to workers like client.send
@@ -132,6 +135,9 @@ def average_parameters_weighted(model, parameters, weights):
 
 ###### NODE SECTION: These functions will be run at node and coordinated through master function; Prefix "RPC_" is required
 
+
+# ----NODE-----
+
 def RPC_initialize_training(rank, group, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
@@ -153,7 +159,7 @@ def RPC_initialize_training(rank, group, color, args):
     print("\033[0;{};49m Rank {} is training on {}".format(color, rank, device))
 
     # Initialize model and send parameters of server to all workers
-    model = sm.Net().to(device)
+    model.to(device)
     # coor.broadcast_parameters(model, group) # this will be done in master function
 
     # Intializing optimizer and scheduler
