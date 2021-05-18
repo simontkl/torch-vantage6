@@ -11,6 +11,66 @@ import v6simplemodel as sm
 import parser as parser
 # import db as db
 
+
+# TODO federated averaging:
+# TODO Calculate the average of the parameters and adjust global model
+# client.create_new_task sends to nodes
+# results = client.get_results(task_id=task.get("id")) gets results from nodes
+
+
+# # TODO send average parameters weighted to workers like client.send
+
+# def get_parameters(client, node):
+#     """
+#     Get parameters from nodes
+#     """
+#
+
+
+def average_parameters_weighted(model, parameters, weights):
+    """
+    Get parameters from nodes and calculate the average
+    :param model: torch model
+    :param parameters: parameters of model
+    :param weights:
+    :return:
+    """
+    with torch.no_grad():
+        for param in model.parameters():
+            average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
+            param.data = average
+            i = i + 1
+        return parameters
+
+def fed_avg(args, model, optimizer, train_loader, test_loader, device):
+    """
+    Training and testing the model on the workers concurrently using federated
+    averaging, which means calculating the average of the local model
+    parameters after a number of (local) epochs each training round.
+
+
+    Returns:
+        Returns the final model
+    """
+
+    for epoch in range(1, args.epochs + 1):
+        # Train the model on the workers
+        model.train(args.log_interval, model, device, train_loader,
+              optimizer, epoch, round, args.local_dp)
+        # Test the model on the workers
+        model.test(model, device, test_loader)
+
+    gather_params = model.get_parameters()
+
+    model.average_parameters_weighted(gather_params)
+
+    return model
+
+
+# TODO: gather parameters which gathers all the new model parameters from the workers and broadcast after
+
+# TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
+
 # ----NODE-----
 
 def RPC_initialize_training(rank, group, color, args):

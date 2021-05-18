@@ -1,2 +1,2 @@
 from .master import *
-from .RPC_algorithms import *
+from .algorithms import *
