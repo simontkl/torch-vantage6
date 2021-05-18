@@ -1,0 +1,151 @@
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+import time
+from opacus import PrivacyEngine
+from vantage6.tools.util import info, warn
+
+# Own modules
+import v6simplemodel as sm
+# import util.parser as parser
+import parser as parser
+# import db as db
+
+# ----NODE-----
+
+def RPC_initialize_training(rank, group, color, args):
+    """
+    Initializes the model, optimizer and scheduler and shares the parameters
+    with all the workers in the group.
+
+    Args:
+        rank: The id of the process.
+        group: The group the process belongs to.
+        color: The color for the terminal output for this worker.
+        learning_rate: The learning rate for training.
+        cuda: Should we use CUDA?
+
+    Returns:
+        Returns the device, model, optimizer and scheduler.
+    """
+    # Determine the device to train on
+    use_cuda = args.use_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    print("\033[0;{};49m Rank {} is training on {}".format(color, rank, device))
+
+    # Initialize model and send parameters of server to all workers
+    model = sm.Net()
+    model.to(device)
+    # coor.broadcast_parameters(model, group) # this will be done in master function
+
+    # Intializing optimizer and scheduler
+
+    # comment S: use opacus for DP: Opacus is a library that enables training PyTorch models with differential privacy. Taken from: https://github.com/pytorch/opacus
+    # makes dp.py obsolete for this project
+
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
+    if args.local_dp:
+        privacy_engine = PrivacyEngine(model, batch_size=64,
+            sample_size=60000, alphas=range(2,32), noise_multiplier=1.3,
+            max_grad_norm=1.0,)
+        privacy_engine.attach(optimizer)
+
+    return device, model, optimizer
+
+
+def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
+    epoch, round, local_dp, delta=1e-5):
+    """
+    Training the model on all batches.
+    Args:
+        rank: The id of the process.
+        color: The color for the terminal output for this worker.
+        log_interval: The amount of rounds before logging intermediate loss.
+        model: A model to run training on.
+        device: The device to run training on.
+        train_loader: Data loader for training data.
+        optimizer: Optimization algorithm used for training.
+        epoch: The number of the epoch the training is in.
+        round: The number of the round the training is in.
+        local_dp: Training with local DP?
+        delta: The delta value of DP to aim for (default: 1e-5).
+    """
+    model.train()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        # Calculate the loss
+        batch = (data, target)
+        loss = RPC_train_batch(model, device, batch, optimizer)
+        # Log information once every log interval
+        if batch_idx % log_interval == 0:
+            print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                color, rank, round, epoch, batch_idx * len(batch[0]), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+
+    if local_dp:
+        epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+        print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
+
+
+def RPC_test(rank, color, model, device, test_loader):
+    """
+    Tests the model.
+
+    Args:
+        rank: The id of the process.
+        color: The color for the terminal output for this worker.
+        model: The model to test.
+        device: The device to test the model on.
+        test_loader: The data loader for test data.
+    """
+    model.eval()
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            # Send the data and target to the device (cpu/gpu) the model is at
+            data, target = data.to(device), target.to(device)
+            # Run the model on the data
+            output = model(data)
+            # Calculate the loss
+            test_loss += F.nll_loss(output, target, reduction='sum').item()
+            # Check whether prediction was correct
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+    test_loss /= len(test_loader.dataset)
+
+    print('\033[0;{};49m \nTest set on Rank {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        color, rank, test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
+
+
+def RPC_train_batch(model, device, batch, optimizer, train=True):
+    """
+    Training the model on one batch of data.
+
+    Args:
+        model: A model to run training on.
+        device: The device to run training on.
+        batch: The batch to train the model on.
+        optimizer: Optimization algorithm used for training.
+        train: Should we update the model parameters? (default:true)
+
+    Returns:
+        The calculated loss after training.
+    """
+    data, target = batch
+    # Send the data and target to the device (cpu/gpu) the model is at
+    data, target = data.to(device), target.to(device)
+    # Clear gradient buffers
+    optimizer.zero_grad()
+    # Run the model on the data
+    output = model(data)
+    # Calculate the loss
+    loss = F.nll_loss(output, target)
+    # Calculate the gradients
+    loss.backward()
+
+    # Update the model weights
+    if train:
+        optimizer.step()
+    return loss
