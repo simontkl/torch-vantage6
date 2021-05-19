@@ -22,6 +22,8 @@ def RPC_some_regular_method(data, *args, **kwargs):
 ```
 This example is taken from (https://github.com/IKNL/v6-boilerplate-py). The functions are the same as in (https://github.com/IKNL/vantage6-client/blob/master/vantage6/tools/mock_client.py) and (https://github.com/IKNL/vantage6-client/blob/master/vantage6/client/__init__.py).
 
+init is split into master.py for master function(s) and algorithms.py
+
 ### client.py
 
 Contains the client functions.
@@ -30,13 +32,6 @@ Contains the client functions.
 
 Contains the PyTorch model (Author: Carlijn Nijhuis).
 
-### v6train.py
-
-The training of the model at node. Original makes use of coordination (which would be my client.py), hence does it need to be incorporated in client.py? 
-
-### db.py
-
-Will contain the database partitioning algorithm (according to Yu).
 
 --------------------
 
