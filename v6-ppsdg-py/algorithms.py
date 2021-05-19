@@ -11,20 +11,15 @@ import v6simplemodel as sm
 import parser as parser
 # import db as db
 
-
 # TODO federated averaging:
-# TODO Calculate the average of the parameters and adjust global model
-# client.create_new_task sends to nodes
-# results = client.get_results(task_id=task.get("id")) gets results from nodes
-
-
-# # TODO send average parameters weighted to workers like client.send
 
 # def get_parameters(client, node):
 #     """
 #     Get parameters from nodes
 #     """
 #
+# "for parameters in nodes:
+#       return parameters"
 
 
 def average_parameters_weighted(model, parameters, weights):
@@ -36,9 +31,9 @@ def average_parameters_weighted(model, parameters, weights):
     :return:
     """
     with torch.no_grad():
-        for param in model.parameters():
+        for parameters in model.parameters():
             average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
-            param.data = average
+            parameters.data = average
             i = i + 1
         return parameters
 
@@ -65,9 +60,6 @@ def fed_avg(args, model, optimizer, train_loader, test_loader, device):
     model.average_parameters_weighted(gather_params)
 
     return model
-
-
-# TODO: gather parameters which gathers all the new model parameters from the workers and broadcast after
 
 # TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
 
