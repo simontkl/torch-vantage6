@@ -78,6 +78,8 @@ def RPC_initialize_training(rank, group, color, args):
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
 
+    This should be sent from server to all nodes.
+
     Args:
         rank: The id of the process.
         group: The group the process belongs to.
@@ -96,13 +98,11 @@ def RPC_initialize_training(rank, group, color, args):
     # Initialize model and send parameters of server to all workers
     model = sm.Net()
     model.to(device)
-    # coor.broadcast_parameters(model, group) # this will be done in master function
+
+    # use Opacus for DP: Opacus is a library that enables training PyTorch models
+    # with differential privacy. Taken from: https://github.com/pytorch/opacus
 
     # Intializing optimizer and scheduler
-
-    # comment S: use opacus for DP: Opacus is a library that enables training PyTorch models with differential privacy. Taken from: https://github.com/pytorch/opacus
-    # makes dp.py obsolete for this project
-
     optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
     if args.local_dp:
         privacy_engine = PrivacyEngine(model, batch_size=64,
