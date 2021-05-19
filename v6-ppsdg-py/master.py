@@ -1,15 +1,9 @@
-import torch
-import torch.nn.functional as F
-import torch.optim as optim
 import time
-from opacus import PrivacyEngine
-from vantage6.tools.util import info, warn
+from vantage6.tools.util import info
 
 # Own modules
-import v6simplemodel as sm
-# import util.parser as parser
 import parser as parser
-# import db as db
+
 
 
 
