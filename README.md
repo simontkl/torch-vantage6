@@ -2,9 +2,6 @@
 # PyTorch model implementation into vantage6 infrastructure
 This implementation uses the (https://vantage6.ai) solution. Vantage6 allows to execute computations on federated datasets. 
 
-As of now, the implementation consists of file structure and slight adjustments to the code examples and guideline as outlined in the vantage6 documentation (https://docs.vantage6.ai/).
-
-It should change to include or be replaced by simplemodel and coordination.
 
 
 ### Dockerfile
@@ -83,16 +80,3 @@ vantage6-v2.0
 
 Here, __init__.py is the algorithm which will import v6simplemodel.py, v6train.py, and db.py.
 
--------- 
-
-### Useful Links
-
-not sure if this is required as RESTful API is an alternative:
-https://blog.jetbrains.com/pycharm/2017/12/building-an-api-using-flask-restful-and-using-the-pycharm-http-client/ \
-https://medium.com/@daniel.carlier/how-to-build-a-simple-flask-restful-api-with-docker-compose-2d849d738137 \
-https://www.jetbrains.com/pycharm/guide/tutorials/intro-aws/crud/ \
-https://en.wikipedia.org/wiki/Remote_procedure_call \
-
-Docker: 
-https://www.jetbrains.com/help/idea/run-debug-configuration-docker.html#docker_image_run_config \
-https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html
