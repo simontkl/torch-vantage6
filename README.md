@@ -2,9 +2,6 @@
 # PyTorch model implementation into vantage6 infrastructure
 This implementation uses the (https://vantage6.ai) solution. Vantage6 allows to execute computations on federated datasets. 
 
-As of now, the implementation consists of file structure and slight adjustments to the code examples and guideline as outlined in the vantage6 documentation (https://docs.vantage6.ai/).
-
-It should change to include or be replaced by simplemodel and coordination.
 
 
 ### Dockerfile
