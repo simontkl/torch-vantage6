@@ -54,38 +54,6 @@ def RPC_initialize_training(data, rank, group, color, args):
     return device, model, optimizer
 
 
-def RPC_train_batch(data, model, device, batch, optimizer, train=True):
-    """
-    Training the model on one batch of data.
-
-    Args:
-        model: A model to run training on.
-        device: The device to run training on.
-        batch: The batch to train the model on.
-        optimizer: Optimization algorithm used for training.
-        train: Should we update the model parameters? (default:true)
-
-    Returns:
-        The calculated loss after training.
-    """
-    data, target = batch
-    # Send the data and target to the device (cpu/gpu) the model is at
-    data, target = data.to(device), target.to(device)
-    # Clear gradient buffers
-    optimizer.zero_grad()
-    # Run the model on the data
-    output = model(data)
-    # Calculate the loss
-    loss = F.nll_loss(output, target)
-    # Calculate the gradients
-    loss.backward()
-
-    # Update the model weights
-    if train:
-        optimizer.step()
-    return loss
-
-
 def RPC_train(data, rank, color, log_interval, model, device, train_loader, optimizer,
     epoch, round, local_dp, delta=1e-5):
     """
@@ -117,6 +85,37 @@ def RPC_train(data, rank, color, log_interval, model, device, train_loader, opti
     if local_dp:
         epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
         print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
+
+def RPC_train_batch(data, model, device, batch, optimizer, train=True):
+    """
+    Training the model on one batch of data.
+
+    Args:
+        model: A model to run training on.
+        device: The device to run training on.
+        batch: The batch to train the model on.
+        optimizer: Optimization algorithm used for training.
+        train: Should we update the model parameters? (default:true)
+
+    Returns:
+        The calculated loss after training.
+    """
+    data, target = batch
+    # Send the data and target to the device (cpu/gpu) the model is at
+    data, target = data.to(device), target.to(device)
+    # Clear gradient buffers
+    optimizer.zero_grad()
+    # Run the model on the data
+    output = model(data)
+    # Calculate the loss
+    loss = F.nll_loss(output, target)
+    # Calculate the gradients
+    loss.backward()
+
+    # Update the model weights
+    if train:
+        optimizer.step()
+    return loss
 
 
 def RPC_test(data, rank, color, model, device, test_loader):
@@ -150,8 +149,6 @@ def RPC_test(data, rank, color, model, device, test_loader):
     print('\033[0;{};49m \nTest set on Rank {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         color, rank, test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-
 
 
 #-----FED_AVG------
