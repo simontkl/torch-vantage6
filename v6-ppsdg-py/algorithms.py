@@ -7,8 +7,11 @@ from opacus import PrivacyEngine
 import v6simplemodel as sm
 
 # ----NODE-----
+# RPC_methods always need to start with data
+# since parameters of fed_Avg are node-dependent, it should happen in a RPC call; also: everything that is dependeant on data should happen in RPC_call
+# if don't want to use data in RPC call: RPC_init_training(_, rank, ...)
 
-def RPC_initialize_training(rank, group, color, args):
+def RPC_initialize_training(data, rank, group, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -48,7 +51,7 @@ def RPC_initialize_training(rank, group, color, args):
     return device, model, optimizer
 
 
-def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
+def RPC_train(data, rank, color, log_interval, model, device, train_loader, optimizer,
     epoch, round, local_dp, delta=1e-5):
     """
     Training the model on all batches.
@@ -81,7 +84,7 @@ def RPC_train(rank, color, log_interval, model, device, train_loader, optimizer,
         print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
 
 
-def RPC_test(rank, color, model, device, test_loader):
+def RPC_test(data, rank, color, model, device, test_loader):
     """
     Tests the model.
 
@@ -114,7 +117,7 @@ def RPC_test(rank, color, model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
 
 
-def RPC_train_batch(model, device, batch, optimizer, train=True):
+def RPC_train_batch(data, model, device, batch, optimizer, train=True):
     """
     Training the model on one batch of data.
 
@@ -144,3 +147,57 @@ def RPC_train_batch(model, device, batch, optimizer, train=True):
     if train:
         optimizer.step()
     return loss
+
+#-----FED_AVG------
+
+# TODO federated averaging:
+
+# def RPC_get_parameters(data, client, node):
+#     """
+#     Get parameters from nodes
+#     """
+#
+# "for parameters in nodes:
+#       return parameters"
+
+
+def RPC_average_parameters_weighted(data, model, parameters, weights):
+    """
+    Get parameters from nodes and calculate the average
+    :param model: torch model
+    :param parameters: parameters of model
+    :param weights:
+    :return:
+    """
+    with torch.no_grad():
+        for parameters in model.parameters():
+            average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
+            parameters.data = average
+            i = i + 1
+        return parameters
+
+def RPC_fed_avg(data, args, model, optimizer, train_loader, test_loader, device):
+    """
+    Training and testing the model on the workers concurrently using federated
+    averaging, which means calculating the average of the local model
+    parameters after a number of (local) epochs each training round.
+
+
+    Returns:
+        Returns the final model
+    """
+
+    for epoch in range(1, args.epochs + 1):
+        # Train the model on the workers
+        model.train(args.log_interval, model, device, train_loader,
+              optimizer, epoch, round, args.local_dp)
+        # Test the model on the workers
+        model.test(model, device, test_loader)
+
+    gather_params = model.get_parameters()
+
+    model.average_parameters_weighted(gather_params)
+
+    return model
+
+# TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
