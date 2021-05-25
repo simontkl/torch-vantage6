@@ -10,6 +10,7 @@ import v6simplemodel as sm
 # RPC_methods always need to start with data
 # since parameters of fed_Avg are node-dependent, it should happen in a RPC call; also: everything that is dependeant on data should happen in RPC_call
 # if don't want to use data in RPC call: RPC_init_training(_, rank, ...)
+maybe
 
 def RPC_initialize_training(data, rank, group, color, args):
     """
@@ -37,6 +38,8 @@ def RPC_initialize_training(data, rank, group, color, args):
     model = sm.Net()
     model.to(device)
 
+    # load data
+
     # use Opacus for DP: Opacus is a library that enables training PyTorch models
     # with differential privacy. Taken from: https://github.com/pytorch/opacus
 
@@ -49,6 +52,38 @@ def RPC_initialize_training(data, rank, group, color, args):
         privacy_engine.attach(optimizer)
 
     return device, model, optimizer
+
+
+def RPC_train_batch(data, model, device, batch, optimizer, train=True):
+    """
+    Training the model on one batch of data.
+
+    Args:
+        model: A model to run training on.
+        device: The device to run training on.
+        batch: The batch to train the model on.
+        optimizer: Optimization algorithm used for training.
+        train: Should we update the model parameters? (default:true)
+
+    Returns:
+        The calculated loss after training.
+    """
+    data, target = batch
+    # Send the data and target to the device (cpu/gpu) the model is at
+    data, target = data.to(device), target.to(device)
+    # Clear gradient buffers
+    optimizer.zero_grad()
+    # Run the model on the data
+    output = model(data)
+    # Calculate the loss
+    loss = F.nll_loss(output, target)
+    # Calculate the gradients
+    loss.backward()
+
+    # Update the model weights
+    if train:
+        optimizer.step()
+    return loss
 
 
 def RPC_train(data, rank, color, log_interval, model, device, train_loader, optimizer,
@@ -117,36 +152,7 @@ def RPC_test(data, rank, color, model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
 
 
-def RPC_train_batch(data, model, device, batch, optimizer, train=True):
-    """
-    Training the model on one batch of data.
 
-    Args:
-        model: A model to run training on.
-        device: The device to run training on.
-        batch: The batch to train the model on.
-        optimizer: Optimization algorithm used for training.
-        train: Should we update the model parameters? (default:true)
-
-    Returns:
-        The calculated loss after training.
-    """
-    data, target = batch
-    # Send the data and target to the device (cpu/gpu) the model is at
-    data, target = data.to(device), target.to(device)
-    # Clear gradient buffers
-    optimizer.zero_grad()
-    # Run the model on the data
-    output = model(data)
-    # Calculate the loss
-    loss = F.nll_loss(output, target)
-    # Calculate the gradients
-    loss.backward()
-
-    # Update the model weights
-    if train:
-        optimizer.step()
-    return loss
 
 #-----FED_AVG------
 
