@@ -26,10 +26,10 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # will create a new task at the central server for them to pick up.
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
-    info('Requesting partial computation')
+    info('Initialising training')
     task = client.create_new_task(
         input_={
-            'method': '',
+            'method': 'initialize_training',
             'kwargs': {
 
             }
@@ -41,13 +41,13 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # their partial. We do this by polling the server for results. It is
     # also possible to subscribe to a websocket channel to get status
     # updates.
-    info("Waiting for results")
-    task_id = task.get("id")
-    task = client.get_task(task_id)
-    while not task.get("complete"):
-        task = client.get_task(task_id)
-        info("Waiting for results")
-        time.sleep(1)
+    # info("Waiting for results")
+    # task_id = task.get("id")
+    # task = client.get_task(task_id)
+    # while not task.get("complete"):
+    #     task = client.get_task(task_id)
+    #     info("Waiting for results")
+    #     time.sleep(1)
 
     # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
@@ -55,3 +55,4 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
 
 parser.parse_arguments()
 
+# TODO We'll need one client.create_new_task for each iteration of the FedAvg
