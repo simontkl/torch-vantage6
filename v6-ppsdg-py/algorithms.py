@@ -11,6 +11,9 @@ import v6simplemodel as sm
 # since parameters of fed_Avg are node-dependent, it should happen in a RPC call; also: everything that is dependeant on data should happen in RPC_call
 # if don't want to use data in RPC call: RPC_init_training(_, rank, ...) maybe
 
+
+### TASKS NEED TO BE CREATED FOR INITIALIZE_TRAINING, TRAINING, SECOND TRAINING (FED_AVG). Fed_avg calls train and test function
+
 def RPC_initialize_training(data, rank, group, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
@@ -175,7 +178,7 @@ def RPC_fed_avg(data, args, model, optimizer, train_loader, test_loader, device)
 
     gather_params = model.get_parameters()
 
-    model.average_parameters_weighted(gather_params)
+    model.RPC_average_parameters_weighted(gather_params)
 
     return model
 
