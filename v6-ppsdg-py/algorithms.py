@@ -54,7 +54,7 @@ def RPC_initialize_training(data, rank, group, color, args):
     return device, model, optimizer
 
 
-def RPC_train(data, color, log_interval, model, device, train_loader, optimizer,
+def train(data, rank, color, log_interval, model, device, train_loader, optimizer,
     epoch, round, local_dp, delta=1e-5):
     """
     Training the model on all batches.
@@ -72,51 +72,52 @@ def RPC_train(data, color, log_interval, model, device, train_loader, optimizer,
         delta: The delta value of DP to aim for (default: 1e-5).
     """
     model.train()
-    for i, (data, target) in enumerate(train_loader):
+    for batch_idx, (data, target) in enumerate(train_loader):
         # Calculate the loss
         batch = (data, target)
-        loss = # RPC_train_batch(model, device, batch, optimizer) # instead any other loss function
+        loss = RPC_train_batch(model, device, batch, optimizer)
         # Log information once every log interval
-        if i % log_interval == 0:
+        if batch_idx % log_interval == 0:
             print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                color, round, epoch, len(train_loader.dataset),
-                100. * i / len(train_loader), loss.item()))
+                color, rank, round, epoch, batch_idx * len(batch[0]), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
 
     if local_dp:
         epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
         print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
 
-## train batch is used for SGD
-# def RPC_train_batch(data, model, device, batch, optimizer, train=True):
-#     """
-#     Training the model on one batch of data.
-#
-#     Args:
-#         model: A model to run training on.
-#         device: The device to run training on.
-#         batch: The batch to train the model on.
-#         optimizer: Optimization algorithm used for training.
-#         train: Should we update the model parameters? (default:true)
-#
-#     Returns:
-#         The calculated loss after training.
-#     """
-#     data, target = batch
-#     # Send the data and target to the device (cpu/gpu) the model is at
-#     data, target = data.to(device), target.to(device)
-#     # Clear gradient buffers
-#     optimizer.zero_grad()
-#     # Run the model on the data
-#     output = model(data)
-#     # Calculate the loss
-#     loss = F.nll_loss(output, target)
-#     # Calculate the gradients
-#     loss.backward()
-#
-#     # Update the model weights
-#     if train:
-#         optimizer.step()
-#     return loss
+# train batch is used for SGD
+def RPC_train_batch(data, model, device, batch, optimizer, train=True):
+    """
+    Training the model on one batch of data.
+
+    Args:
+        model: A model to run training on.
+        device: The device to run training on.
+        batch: The batch to train the model on.
+        optimizer: Optimization algorithm used for training.
+        train: Should we update the model parameters? (default:true)
+
+    Returns:
+        The calculated loss after training.
+    """
+    data, target = batch
+    # Send the data and target to the device (cpu/gpu) the model is at
+    #line 146 I mean that it is either send to the cpu or to the gpu, but the data is already on the worker node, so don’t interpret that as sending it from the server to the worker
+    data, target = data.to(device), target.to(device)
+    # Clear gradient buffers
+    optimizer.zero_grad()
+    # Run the model on the data
+    output = model(data)
+    # Calculate the loss
+    loss = F.nll_loss(output, target)
+    # Calculate the gradients
+    loss.backward()
+
+    # Update the model weights
+    if train:
+        optimizer.step()
+    return loss
 
 
 def RPC_test(data, rank, color, model, device, test_loader):
