@@ -1,3 +1,9 @@
+"""
+Author: Simon Tokloth
+Date:
+Description: This module contains the master function which is responsible for the communication.
+"""
+
 import torch
 import time
 from vantage6.tools.util import info

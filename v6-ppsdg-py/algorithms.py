@@ -1,3 +1,9 @@
+"""
+Author: Simon Tokloth
+Date:
+Description: This module contains the RPC_methods including the training and federated averaging.
+"""
+
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
