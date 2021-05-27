@@ -71,7 +71,6 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
     Args:
         rank: The id of the process.
         color: The color for the terminal output for this worker.
-        log_interval: The amount of rounds before logging intermediate loss.
         model: A model to run training on.
         device: The device to run training on.
         train_loader: Data loader for training data.
@@ -181,7 +180,7 @@ def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_lo
     if (rank != 0):
         for epoch in range(1, args.epochs + 1):
             # Train the model on the workers
-            RPC_train(data, color, model, device, args.log_interval, train_loader, optimizer, epoch, args.local_dp, delta=1e-5)
+            RPC_train(data, color, model, device, train_loader, optimizer, epoch, args.local_dp, delta=1e-5)
             # Test the model on the workers
             RPC_test(data, rank, color, model, device, test_loader)
 
