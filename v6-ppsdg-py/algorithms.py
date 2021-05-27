@@ -56,7 +56,9 @@ def RPC_initialize_training(data, rank, group, color, args):
     return device, model, optimizer
 
 
-def RPC_train(data, color, model, device, train_loader, optimizer,
+## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the data parameter? Or can it just be def train(color, model, ...)?
+
+def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
     local_dp, delta=1e-5):
     """
     Training the model on all batches.
@@ -76,7 +78,7 @@ def RPC_train(data, color, model, device, train_loader, optimizer,
     model.train()
 
     for i, (data, target) in enumerate(train_loader):
-        # Send the data and target to the device (cpu/gpu) the model is at (either send to the cpu or to the gpu, but the data is already on the worker node)
+        # Send the data and target to the device (cpu/gpu) the model is at (either send to the cpu or to the gpu, but the data is already on the worker node); model.send(data.location)
         data, target = data.to(device), target.to(device)
         # Clear gradient buffers
         optimizer.zero_grad()
@@ -86,8 +88,10 @@ def RPC_train(data, color, model, device, train_loader, optimizer,
         loss = F.nll_loss(output, target)
         # Calculate the gradients
         loss.backward()
+        optimizer.step()
 
-    #Logging needed if want the same output as torch.dist
+
+    # Logging needed if want the same output as torch.dist
     # print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
     #     color, rank, round, epoch, batch_idx * len(batch[0]), len(train_loader.dataset),
     #     100. * batch_idx / len(train_loader), loss.item()))
@@ -158,7 +162,7 @@ def RPC_average_parameters_weighted(data, model, parameters, weights):
             i = i + 1
         return parameters
 
-def RPC_fed_avg(data, args, model, optimizer, train_loader, test_loader, device):
+def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_loader, device):
     """
     Training and testing the model on the workers concurrently using federated
     averaging, which means calculating the average of the local model
@@ -168,13 +172,12 @@ def RPC_fed_avg(data, args, model, optimizer, train_loader, test_loader, device)
     Returns:
         Returns the final model
     """
-
-    for epoch in range(1, args.epochs + 1):
-        # Train the model on the workers
-        model.train(args.log_interval, model, device, train_loader,
-              optimizer, epoch, round, args.local_dp)
-        # Test the model on the workers
-        model.test(model, device, test_loader)
+    if (rank != 0):
+        for epoch in range(1, args.epochs + 1):
+            # Train the model on the workers
+            RPC_train(data, color, model, device, args.log_interval, train_loader, optimizer, epoch, args.local_dp, delta=1e-5)
+            # Test the model on the workers
+            RPC_test(data, rank, color, model, device, test_loader)
 
     gather_params = model.get_parameters()
 
@@ -182,4 +185,15 @@ def RPC_fed_avg(data, args, model, optimizer, train_loader, test_loader, device)
 
     return model
 
-# TODO DATA !! -> send to nodes full dataset or sample and do indexing at node
+    # # Gather the parameters after the training round on the server
+    #     gather_params = coor.gather_parameters(rank, model, group_size + 1, subgroup)
+    #
+    #     # If the server
+    #     if rank == 0:
+    #         # Calculate the average of the parameters and adjust global model
+    #         coor.average_parameters_weighted(model, gather_params, weights)
+    #
+    #     # Send the new model parameters to the workers
+    #     coor.broadcast_parameters(model, group)
+
+
