@@ -46,7 +46,7 @@ def RPC_initialize_training(data, rank, group, color, args):
     model = sm.Net()
     model.to(device)
 
-    # load data
+    # TODO: load data? train_loader, test_loader from locally stored data
 
     # use Opacus for DP: Opacus is a library that enables training PyTorch models
     # with differential privacy. Taken from: https://github.com/pytorch/opacus
@@ -80,6 +80,8 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
         local_dp: Training with local DP?
         delta: The delta value of DP to aim for (default: 1e-5).
     """
+    # TODO: define train_loader again from local data
+
     model.train()
 
     for i, (data, target) in enumerate(train_loader):
@@ -117,6 +119,8 @@ def RPC_test(data, rank, color, model, device, test_loader):
         device: The device to test the model on.
         test_loader: The data loader for test data.
     """
+    # TODO: load local dataset as test_loader
+
     model.eval()
     test_loss = 0
     correct = 0
@@ -160,6 +164,8 @@ def RPC_average_parameters_weighted(data, model, parameters, weights):
     :param weights:
     :return:
     """
+    # TODO: data: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+
     with torch.no_grad():
         for parameters in model.parameters():
             average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
@@ -177,6 +183,8 @@ def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_lo
     Returns:
         Returns the final model
     """
+    # TODO: data: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+
     if (rank != 0):
         for epoch in range(1, args.epochs + 1):
             # Train the model on the workers
