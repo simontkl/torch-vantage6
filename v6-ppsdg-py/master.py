@@ -43,21 +43,79 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
+    info('Train')
+    task = client.create_new_task(
+        input_={
+            'method': 'train',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
+
+    info('Test')
+    task = client.create_new_task(
+        input_={
+            'method': 'test',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
+
+    info('Gather params')
+    task = client.create_new_task(
+        input_={
+            'method': 'get_parameters',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
+
+
+    info('Average params')
+    task = client.create_new_task(
+        input_={
+            'method': 'average_parameters_weighted',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
+
+    info('Federated averaging')
+    task = client.create_new_task(
+        input_={
+            'method': 'fed_avg',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
+
     # Now we need to wait until all organizations(/nodes) finished
     # their partial. We do this by polling the server for results. It is
     # also possible to subscribe to a websocket channel to get status
     # updates.
-    # info("Waiting for results")
-    # task_id = task.get("id")
-    # task = client.get_task(task_id)
-    # while not task.get("complete"):
-    #     task = client.get_task(task_id)
-    #     info("Waiting for results")
-    #     time.sleep(1)
+
+    info("Waiting for results")
+    task_id = task.get("id")
+    task = client.get_task(task_id)
+    while not task.get("complete"):
+        task = client.get_task(task_id)
+        info("Waiting for results")
+        time.sleep(1)
 
     # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
+
 
 parser.parse_arguments()
 

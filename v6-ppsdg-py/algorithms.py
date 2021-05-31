@@ -56,10 +56,12 @@ def RPC_initialize_training(data, rank, group, color, args):
     if args.local_dp:
         privacy_engine = PrivacyEngine(model, batch_size=64,
             sample_size=60000, alphas=range(2,32), noise_multiplier=1.3,
-            max_grad_norm=1.0,)
+            max_grad_norm=1.0)
         privacy_engine.attach(optimizer)
 
     return device, model, optimizer
+
+    ## TODO: store as dict or list
 
 
 ## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the local parameter? Or can it just be def train(color, model, ...)?
