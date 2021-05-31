@@ -1,7 +1,7 @@
 # this is a copy of the actual node_configuration.yaml file. Go to C:\Users\simon\AppData\Local\vantage6\node\node_configuration and change it there as well
 
 application:
-  api_key: api-key-from-server
+  api_key: 6f755662-bf97-11eb-af4f-0242ac110003
   api_path: /api
   databases:
     default: C:\Users\simon\PycharmProjects\ppsdg\Code\data
@@ -16,7 +16,7 @@ application:
     max_size: 1024
     use_console: true
   port: '5000'
-  server_url: http://localhost # for local testing; server for actual implementation
+  server_url: host.docker.internal
   task_dir: C:\Users\simon\AppData\Local\vantage6\node\node_configuration
 environments:
   acc: {}

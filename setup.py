@@ -17,7 +17,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 #     __version__ = fp.read()
 
 # setup the package
-# Here you specify the meta-data of your package. The `name` argument is
+# Here you specify the meta-local of your package. The `name` argument is
 # needed in some other steps.
 setup(
     name='ppsdg-v6',

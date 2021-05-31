@@ -13,9 +13,9 @@ from opacus import PrivacyEngine
 import v6simplemodel as sm
 
 # ----NODE-----
-# RPC_methods always need to start with data
-# since parameters of fed_Avg are node-dependent, it should happen in a RPC call; also: everything that is dependeant on data should happen in RPC_call
-# if don't want to use data in RPC call: RPC_init_training(_, rank, ...) maybe
+# RPC_methods always need to start with local
+# since parameters of fed_Avg are node-dependent, it should happen in a RPC call; also: everything that is dependeant on local should happen in RPC_call
+# if don't want to use local in RPC call: RPC_init_training(_, rank, ...) maybe
 
 
 ### TASKS NEED TO BE CREATED FOR INITIALIZE_TRAINING, TRAINING, SECOND TRAINING (FED_AVG). Fed_avg calls train and test function
@@ -46,7 +46,7 @@ def RPC_initialize_training(data, rank, group, color, args):
     model = sm.Net()
     model.to(device)
 
-    # TODO: load data? train_loader, test_loader from locally stored data
+    # TODO: load local? train_loader, test_loader from locally stored local
 
     # use Opacus for DP: Opacus is a library that enables training PyTorch models
     # with differential privacy. Taken from: https://github.com/pytorch/opacus
@@ -62,7 +62,7 @@ def RPC_initialize_training(data, rank, group, color, args):
     return device, model, optimizer
 
 
-## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the data parameter? Or can it just be def train(color, model, ...)?
+## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the local parameter? Or can it just be def train(color, model, ...)?
 
 def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
     local_dp, delta=1e-5):
@@ -73,23 +73,23 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
         color: The color for the terminal output for this worker.
         model: A model to run training on.
         device: The device to run training on.
-        train_loader: Data loader for training data.
+        train_loader: Data loader for training local.
         optimizer: Optimization algorithm used for training.
         epoch: The number of the epoch the training is in.
         round: The number of the round the training is in.
         local_dp: Training with local DP?
         delta: The delta value of DP to aim for (default: 1e-5).
     """
-    # TODO: define train_loader again from local data
+    # TODO: define train_loader again from local local
 
     model.train()
 
     for i, (data, target) in enumerate(train_loader):
-        # Send the data and target to the device (cpu/gpu) the model is at (either send to the cpu or to the gpu, but the data is already on the worker node); model.send(data.location)
+        # Send the local and target to the device (cpu/gpu) the model is at (either send to the cpu or to the gpu, but the local is already on the worker node); model.send(local.location)
         data, target = data.to(device), target.to(device)
         # Clear gradient buffers
         optimizer.zero_grad()
-        # Run the model on the data
+        # Run the model on the local
         output = model(data)
         # Calculate the loss
         loss = F.nll_loss(output, target)
@@ -117,7 +117,7 @@ def RPC_test(data, rank, color, model, device, test_loader):
         color: The color for the terminal output for this worker.
         model: The model to test.
         device: The device to test the model on.
-        test_loader: The data loader for test data.
+        test_loader: The local loader for test local.
     """
     # TODO: load local dataset as test_loader
 
@@ -126,9 +126,9 @@ def RPC_test(data, rank, color, model, device, test_loader):
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
-            # Send the data and target to the device (cpu/gpu) the model is at
+            # Send the local and target to the device (cpu/gpu) the model is at
             data, target = data.to(device), target.to(device)
-            # Run the model on the data
+            # Run the model on the local
             output = model(data)
             # Calculate the loss
             test_loss += F.nll_loss(output, target, reduction='sum').item()
@@ -147,7 +147,7 @@ def RPC_test(data, rank, color, model, device, test_loader):
 
 # TODO federated averaging:
 
-# def RPC_get_parameters(data, client, node):
+# def RPC_get_parameters(local, client, node):
 #     """
 #     Get parameters from nodes
 #     """
@@ -164,7 +164,7 @@ def RPC_average_parameters_weighted(data, model, parameters, weights):
     :param weights:
     :return:
     """
-    # TODO: data: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
     with torch.no_grad():
         for parameters in model.parameters():
@@ -183,7 +183,7 @@ def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_lo
     Returns:
         Returns the final model
     """
-    # TODO: data: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
     if (rank != 0):
         for epoch in range(1, args.epochs + 1):
