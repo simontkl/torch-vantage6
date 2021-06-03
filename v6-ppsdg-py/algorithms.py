@@ -37,6 +37,11 @@ def RPC_initialize_training(data, rank, group, color, args):
     Returns:
         Returns the device, model, optimizer and scheduler.
     """
+    # Load local dataset
+    # first:
+        # torch.save(dataset_train, './dataset.pt')
+    data = torch.load('./dataset.pt')
+
     # Determine the device to train on
     use_cuda = args.use_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -61,8 +66,6 @@ def RPC_initialize_training(data, rank, group, color, args):
 
     return device, model, optimizer
 
-    ## TODO: store as dict or list
-
 
 ## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the local parameter? Or can it just be def train(color, model, ...)?
 
@@ -83,6 +86,8 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
         delta: The delta value of DP to aim for (default: 1e-5).
     """
     # TODO: define train_loader again from local local
+    data = torch.load('./dataset.pt')
+    train_loader, test_loader, data_size = data
 
     model.train()
 
@@ -122,6 +127,8 @@ def RPC_test(data, rank, color, model, device, test_loader):
         test_loader: The local loader for test local.
     """
     # TODO: load local dataset as test_loader
+    data = torch.load('./dataset.pt')
+    train_loader, test_loader, data_size = data
 
     model.eval()
     test_loss = 0
@@ -149,7 +156,7 @@ def RPC_test(data, rank, color, model, device, test_loader):
 
 # TODO federated averaging:
 
-# def RPC_get_parameters(local, client, node):
+# def RPC_get_parameters(data, model, parameters, weights):
 #     """
 #     Get parameters from nodes
 #     """
