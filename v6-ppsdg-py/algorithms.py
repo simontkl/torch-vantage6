@@ -18,8 +18,6 @@ import v6simplemodel as sm
 # if don't want to use local in RPC call: RPC_init_training(_, rank, ...) maybe
 
 
-### TASKS NEED TO BE CREATED FOR INITIALIZE_TRAINING, TRAINING, SECOND TRAINING (FED_AVG). Fed_avg calls train and test function
-
 def RPC_initialize_training(data, rank, group, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
@@ -74,7 +72,6 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
     """
     Training the model on all batches.
     Args:
-        rank: The id of the process.
         color: The color for the terminal output for this worker.
         model: A model to run training on.
         device: The device to run training on.
@@ -115,12 +112,11 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
         print("\033[0;{};49m Epsilon {}, best alpha {}".format(color, epsilon, alpha))
 
 
-def RPC_test(data, rank, color, model, device, test_loader):
+def RPC_test(data, color, model, device, test_loader):
     """
     Tests the model.
 
     Args:
-        rank: The id of the process.
         color: The color for the terminal output for this worker.
         model: The model to test.
         device: The device to test the model on.
@@ -147,8 +143,8 @@ def RPC_test(data, rank, color, model, device, test_loader):
 
     test_loss /= len(test_loader.dataset)
 
-    print('\033[0;{};49m \nTest set on Rank {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        color, rank, test_loss, correct, len(test_loader.dataset),
+    print('\033[0;{};49m \nAverage loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        color, test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
 
@@ -182,7 +178,7 @@ def RPC_average_parameters_weighted(data, model, parameters, weights):
             i = i + 1
         return parameters
 
-def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_loader, device):
+def RPC_fed_avg(data, color, args, model, optimizer, train_loader, test_loader, device):
     """
     Training and testing the model on the workers concurrently using federated
     averaging, which means calculating the average of the local model
@@ -194,12 +190,11 @@ def RPC_fed_avg(data, rank, color, args, model, optimizer, train_loader, test_lo
     """
     # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
-    if (rank != 0):
-        for epoch in range(1, args.epochs + 1):
-            # Train the model on the workers
-            RPC_train(data, color, model, device, train_loader, optimizer, epoch, args.local_dp, delta=1e-5)
-            # Test the model on the workers
-            RPC_test(data, rank, color, model, device, test_loader)
+    for epoch in range(1, args.epochs + 1):
+        # Train the model on the workers
+        RPC_train(data, color, model, device, train_loader, optimizer, epoch, args.local_dp, delta=1e-5)
+        # Test the model on the workers
+        RPC_test(data, color, model, device, test_loader)
 
     gather_params = model.get_parameters()
 
