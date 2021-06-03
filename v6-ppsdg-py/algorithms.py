@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from opacus import PrivacyEngine
+from torchvision import transforms
 
 # Own modules
 import v6simplemodel as sm
@@ -18,7 +19,7 @@ import v6simplemodel as sm
 # if don't want to use local in RPC call: RPC_init_training(_, rank, ...) maybe
 
 
-def RPC_initialize_training(data, rank, group, color, args):
+def RPC_initialize_training(data, color, args):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -26,8 +27,6 @@ def RPC_initialize_training(data, rank, group, color, args):
     This should be sent from server to all nodes.
 
     Args:
-        rank: The id of the process.
-        group: The group the process belongs to.
         color: The color for the terminal output for this worker.
         learning_rate: The learning rate for training.
         cuda: Should we use CUDA?
@@ -43,7 +42,7 @@ def RPC_initialize_training(data, rank, group, color, args):
     # Determine the device to train on
     use_cuda = args.use_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    print("\033[0;{};49m Rank {} is training on {}".format(color, rank, device))
+    # print("\033[0;{};49m Rank {} is training on {}".format(color, rank, device))
 
     # Initialize model and send parameters of server to all workers
     model = sm.Net()
@@ -100,8 +99,7 @@ def RPC_train(data, color, model, device, train_loader, optimizer, epoch,
         # Calculate the gradients
         loss.backward()
         optimizer.step()
-
-
+    return epoch
     # Logging needed if want the same output as torch.dist
     # print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
     #     color, rank, round, epoch, batch_idx * len(batch[0]), len(train_loader.dataset),
