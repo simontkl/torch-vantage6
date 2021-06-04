@@ -76,7 +76,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
-
     info('Average params')
     task = client.create_new_task(
         input_={
@@ -99,10 +98,12 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
-    # Now we need to wait until all organizations(/nodes) finished
-    # their partial. We do this by polling the server for results. It is
-    # also possible to subscribe to a websocket channel to get status
-    # updates.
+    '''
+    Now we need to wait until all organizations(/nodes) finished
+    their partial. We do this by polling the server for results. It is
+    also possible to subscribe to a websocket channel to get status
+    updates.
+    '''
 
     info("Waiting for results")
     task_id = task.get("id")
