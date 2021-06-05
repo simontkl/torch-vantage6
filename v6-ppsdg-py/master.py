@@ -96,7 +96,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
 
     # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
     average_parameters()
-
+    # this function returns a dictionary of the parameters
 
     """
     the training happens at the worker nodes. However, as no node-to-node communication is possible, 

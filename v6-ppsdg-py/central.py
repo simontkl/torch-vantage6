@@ -9,8 +9,6 @@ from .algorithms import RPC_train, RPC_test
 from .algorithms import RPC_get_parameters
 
 
-
-
 def average_parameters(node_output_param, organisations):
     """
     Get parameters from nodes and calculate the average
@@ -26,10 +24,9 @@ def average_parameters(node_output_param, organisations):
 
     return {"params_average": parameters / n_nodes}
 
-    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
-
-
-
+    # """
+    # for comparison, the next code snippet provides the torch.distributed implementation
+    # """
 
 #     i = 0
 #     with torch.no_grad():
