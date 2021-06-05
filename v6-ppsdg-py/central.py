@@ -9,17 +9,18 @@ from .algorithms import RPC_train, RPC_test
 from .algorithms import RPC_get_parameters
 
 
-def average_parameters(node_output_param, organisations):
+def average_parameters(params, organizations):
     """
     Get parameters from nodes and calculate the average
-    :param node_output_param: the output of RPC_gather_parameters
+    :param node_output_param: the output of RPC_gather_parameters;
+        first entry and will be ignored accordingly.; these are the parameters of the model after training
     :param organisations: the organisations defined in master function
     """
 
     parameters = []
     n_nodes = len(organisations)  # how many organisations?
 
-    for output in node_output_param:
+    for output in params:
         parameters += output["parameters"]
 
     return {"params_average": parameters / n_nodes}

@@ -78,6 +78,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
+
     '''
     Now we need to wait until all organizations(/nodes) finished
     their partial. We do this by polling the server for results. It is
@@ -93,10 +94,11 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         info("Waiting for results")
         time.sleep(1)
 
+    node_output_param = client.get_results(task_id=task.get("id"))
 
     # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
-    average_parameters()
-    # this function returns a dictionary of the parameters
+    average_parameters(node_output_param, organizations)
+    # this function returns a dictionary of the parameters; param = node_output_param, organizations = organizations
 
     """
     the training happens at the worker nodes. However, as no node-to-node communication is possible, 

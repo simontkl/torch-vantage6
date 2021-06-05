@@ -185,6 +185,10 @@ def RPC_test(data):
 def RPC_get_parameters(data, model, parameters):
     """
     Get parameters from nodes
+    :parameters A list of lists of tensors, in other words the list contains
+        an entry for each model parameter, where the entry is a list of tensors
+        to take the average from for that specific parameter. It assumes that
+        the parameters from the server are also contained in this list as the
     """
     # data_size = len(data) // 3  # number of nodes# size of dataset
     #
