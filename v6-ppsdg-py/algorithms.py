@@ -186,20 +186,20 @@ def RPC_get_parameters(data, model, parameters):
     """
     Get parameters from nodes
     """
-    data_size = len(data) // 3  # number of nodes# size of dataset
+    # data_size = len(data) // 3  # number of nodes# size of dataset
+    #
+    # weights = []
+    # # Gather the data sizes on the server
+    # tensor_weights = torch.tensor(data_size)
+    # tensor_weights = tensor_weights[1:]
+    # # Convert all tensors back to weights
+    # for tensor in tensor_weights:
+    #     weights.append(tensor.item())
 
-    weights = []
-    # Gather the data sizes on the server
-    tensor_weights = torch.tensor(data_size)
-    tensor_weights = tensor_weights[1:]
-    # Convert all tensors back to weights
-    for tensor in tensor_weights:
-        weights.append(tensor.item())
+    with torch.no_grad():
+        for parameters in model.parameters():
+            return {"params": parameters}
 
-    for parameters in model.parameters():
-        return {
-            "params": parameters,
-        }
 
 
 """

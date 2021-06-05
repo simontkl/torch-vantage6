@@ -10,16 +10,21 @@ from .algorithms import RPC_get_parameters
 
 
 
-def average_parameters(data, model):
+
+def average_parameters(node_output_param, organisations):
     """
     Get parameters from nodes and calculate the average
-    :param model: torch model
-    :param parameters: parameters of model
-    :param weights:
-    :return:
+    :param node_output_param: the output of RPC_gather_parameters
+    :param organisations: the organisations defined in master function
     """
 
-    parameters = RPC_get_parameters()  # makes returned parameters from RPC_get_parameters the parameters used in this function
+    parameters = []
+    n_nodes = len(organisations)  # how many organisations?
+
+    for output in node_output_param:
+        parameters += output["parameters"]
+
+    return {"params_average": parameters / n_nodes}
 
     # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
