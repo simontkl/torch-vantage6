@@ -1,3 +1,9 @@
+"""
+Author: Simon Tokloth
+Date:
+Description: The central algorithm receives the parameters from the nodes and divides by number of nodes-1 for mean parameters.
+"""
+
 import torch
 from .algorithms import RPC_train, RPC_test
 from .algorithms import RPC_get_parameters
