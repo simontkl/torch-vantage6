@@ -196,6 +196,8 @@ def RPC_get_parameters(data, model, parameters):
     # for tensor in tensor_weights:
     #     weights.append(tensor.item())
 
+    RPC_train()
+
     with torch.no_grad():
         for parameters in model.parameters():
             return {"params": parameters}
@@ -217,7 +219,7 @@ def RPC_fed_avg(data, local_dp, model, device, optimizer, epoch, parameters, del
 
     In vantage6, this method will be the training of the model with the average parameters (weighted)
 
-    parameters will need to be specified in args and take parameters from averaged_parameters
+    :parameters will need to be specified in args and take parameters from averaged_parameters
 
     Returns:
         Returns the final model

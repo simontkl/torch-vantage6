@@ -43,6 +43,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
+    ## Train without federated averaging
     info('Train')
     task = client.create_new_task(
         input_={
@@ -54,6 +55,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
+    ## Evaluate non-averaged model
     info('Test')
     task = client.create_new_task(
         input_={
@@ -91,11 +93,27 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         info("Waiting for results")
         time.sleep(1)
 
+
     # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
     average_parameters()
 
-    # execute federated averaging with trains at server and returns model
-    fed_avg()
+
+    """
+    the training happens at the worker nodes. However, as no node-to-node communication is possible, 
+    the parameters which are returned by the RPC_get_parameters function. The averaged parameters are then returned 
+    and used in the federated_averaging method at the workers with the new parameters
+    """
+
+    info('Federated Averaging training')
+    task = client.create_new_task(
+        input_={
+            'method': 'federated_averaging',
+            'kwargs': {
+
+            }
+        },
+        organization_ids=ids
+    )
 
 
 
