@@ -10,7 +10,7 @@ from vantage6.tools.util import info
 
 # Own modules
 import parser as parser
-
+from .central import average_parameters
 
 
 def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
@@ -76,28 +76,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
-    info('Average params')
-    task = client.create_new_task(
-        input_={
-            'method': 'average_parameters_weighted',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
-
-    info('Federated averaging')
-    task = client.create_new_task(
-        input_={
-            'method': 'fed_avg',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
-
     '''
     Now we need to wait until all organizations(/nodes) finished
     their partial. We do this by polling the server for results. It is
@@ -113,11 +91,18 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         info("Waiting for results")
         time.sleep(1)
 
+    # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
+    average_parameters()
+
+    # execute federated averaging with trains at server and returns model
+    fed_avg()
+
+
+
+
     # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
 
-
-parser.parse_arguments()
 
 # TODO We'll need one client.create_new_task for each iteration of the FedAvg

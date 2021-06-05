@@ -150,31 +150,30 @@ def RPC_test(data, color, model, device, test_loader):
 
 # TODO federated averaging:
 
-# def RPC_get_parameters(data, model, parameters, weights):
-#     """
-#     Get parameters from nodes
-#     """
-#
-# "for parameters in nodes:
-#       return parameters"
-
-
-def RPC_average_parameters_weighted(data, model, parameters, weights):
+def RPC_get_parameters(data, model, parameters):
     """
-    Get parameters from nodes and calculate the average
-    :param model: torch model
-    :param parameters: parameters of model
-    :param weights:
-    :return:
+    Get parameters from nodes
     """
-    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+    data_size = len(data) // 3  # number of nodes# size of dataset
 
-    with torch.no_grad():
-        for parameters in model.parameters():
-            average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
-            parameters.data = average
-            i = i + 1
-        return parameters
+    weights = []
+    # Gather the data sizes on the server
+    tensor_weights = torch.tensor(data_size)
+    tensor_weights = tensor_weights[1:]
+    # Convert all tensors back to weights
+    for tensor in tensor_weights:
+        weights.append(tensor.item())
+
+    for parameters in model.parameters():
+        return {
+            "params": parameters,
+        }
+
+
+"""
+this might need to be combined with training, so that train 
+returns the parameters or that it at least calls the results of training function
+"""
 
 def RPC_fed_avg(data, color, args, model, optimizer, train_loader, test_loader, device):
     """
