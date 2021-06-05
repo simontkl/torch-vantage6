@@ -25,9 +25,9 @@ setup(
     description='ppsdg project with vantage6 implementation',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/IKNL/v6_boilerplate-py',
+    url='https://github.com/simontkl/torch-vantage6',
     packages=find_packages(),
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         # 'vantage6-client'
     ]
