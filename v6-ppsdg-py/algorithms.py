@@ -11,7 +11,7 @@ from opacus import PrivacyEngine
 from torchvision import transforms
 
 # Own modules
-import v6simplemodel as sm
+from .v6simplemodel import Net
 
 # ----NODE-----
 # RPC_methods always need to start with local
@@ -45,7 +45,7 @@ def RPC_initialize_training(data, color, args):
     # print("\033[0;{};49m Rank {} is training on {}".format(color, rank, device))
 
     # Initialize model and send parameters of server to all workers
-    model = sm.Net()
+    model = Net()
     model.to(device)
 
     # TODO: load local? train_loader, test_loader from locally stored local
