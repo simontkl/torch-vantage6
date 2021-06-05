@@ -201,7 +201,6 @@ def RPC_get_parameters(data, model, parameters):
             return {"params": parameters}
 
 
-
 """
 this might need to be combined with training, so that train 
 returns the parameters or that it at least calls the results of training function

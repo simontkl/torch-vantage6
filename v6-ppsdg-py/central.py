@@ -28,14 +28,7 @@ def average_parameters(node_output_param, organisations):
 
     # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
-    with torch.no_grad():
-        for parameters in model.parameters():
-            average = sum(x * y for x, y in zip(parameters[i], weights)) / sum(weights)
-            parameters.data = average
-            i = i + 1
-        return {
-            "params_averaged": model
-        }
+
 
 
 #     i = 0
