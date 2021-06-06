@@ -81,38 +81,27 @@ def RPC_train(data, log_interval, local_dp, epoch, round, delta=1e-5):
     device, model, optimizer = RPC_initialize_training(data, gamma, learning_rate,
                                                        local_dp)  # is this allowed in vantage6? calling one RPC_method in another?
 
-    train_loader = torch.load(
-        "/Users/simontokloth/PycharmProjects/torch-vantage6/v6-ppsdg-py/local/MNIST/processed/training.pt")
-
-    #     train_loader = torch.utils.data.DataLoader(datasets.MNIST('../mnist_data',
-    #                                                           download=True,
-    #                                                             train=True,
-    #                                                           transform=transforms.Compose([
-    #                                                               transforms.ToTensor(), # first, convert image to PyTorch tensor
-    #                                                               transforms.Normalize((0.1307,), (0.3081,)) # normalize inputs
-    #                                                           ])),
-    #                                            batch_size=10,
-    #                                            shuffle=True)
-
     model.train()
-
-    for batch_idx, (data, target) in enumerate(train_loader):
-        # define batch
-        batch = (data, target)
-        # Send the local and target to the device (cpu/gpu) the model is at (either send to the cpu or to the gpu, but the local is already on the worker node); model.send(local.location)
-        data, target = data.to(device), target.to(device)
+    # , (data, target)
+    for batch_idx, data in enumerate(data, 0):
+        #         batch = (data, target)
+        data, target = data
+        # Send the data and target to the device (cpu/gpu) the model is at
+        #         data, target = data.to(device), target.to(device)
         # Clear gradient buffers
         optimizer.zero_grad()
-        # Run the model on the local
+        # Run the model on the data
         output = model(data)
         # Calculate the loss
         loss = F.nll_loss(output, target)
         # Calculate the gradients
         loss.backward()
-        # Update the model weights
         optimizer.step()
-        #         return loss
         print(loss)
+    #     # Update the model weights
+    #     if train:
+    #         optimizer.step()
+    #     return loss
 
     #         if batch_idx % log_interval == 0:
     #             print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -124,6 +113,27 @@ def RPC_train(data, log_interval, local_dp, epoch, round, delta=1e-5):
         epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
         # print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
 
+
+#     running_loss = 0.0
+#     for i, data in enumerate(trainloader, 0):
+#         # get the inputs; data is a list of [inputs, labels]
+#         inputs, labels = data
+
+#         # zero the parameter gradients
+#         optimizer.zero_grad()
+
+#         # forward + backward + optimize
+#         outputs = net(inputs)
+#         loss = criterion(outputs, labels)
+#         loss.backward()
+#         optimizer.step()
+
+#         # print statistics
+#         running_loss += loss.item()
+#         if i % 2000 == 1999:    # print every 2000 mini-batches
+#             print('[%d, %5d] loss: %.3f' %
+#                   (epoch + 1, i + 1, running_loss / 2000))
+#             running_loss = 0.0
 
 # Model Evaluation
 
