@@ -9,7 +9,6 @@ import time
 from vantage6.tools.util import info
 
 # Own modules
-import parser as parser
 from .central import average_parameters
 
 

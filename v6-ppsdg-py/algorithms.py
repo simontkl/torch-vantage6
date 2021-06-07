@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from opacus import PrivacyEngine
 
+
 # Own modules
 from .v6simplemodel import Net
 
@@ -78,8 +79,7 @@ def RPC_train(data, log_interval, local_dp, epoch, round, delta=1e-5):
         delta: The delta value of DP to aim for (default: 1e-5).
     """
     # loading arguments/parameters from first RPC_method
-    device, model, optimizer = RPC_initialize_training(data, gamma, learning_rate,
-                                                       local_dp)  # is this allowed in vantage6? calling one RPC_method in another?
+    device, model, optimizer = RPC_initialize_training(data, gamma, learning_rate, local_dp)  # is this allowed in vantage6? calling one RPC_method in another?
 
     model.train()
     # , (data, target)
