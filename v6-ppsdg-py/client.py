@@ -48,7 +48,7 @@ from vantage6.tools.mock_client import ClientMockProtocol
 # package. This is the name you specified in `setup.py`, in our case that
 # would be v6-average-py.
 client = ClientMockProtocol(
-    datasets=["./local/MNIST/training.pt", "./local/MNIST/test.pt"],
+    datasets=["./local/mnist_train.csv", "./local/mnist_test.csv"],
     module="v6-ppsdg-py"
 )
 
@@ -56,6 +56,45 @@ client = ClientMockProtocol(
 # following
 organizations = client.get_organizations_in_my_collaboration()
 org_ids = ids = [organization["id"] for organization in organizations]
+
+
+task = client.create_new_task({'method': 'initialize_training', ids})
+print(task)
+
+
+task = client.create_new_task({'method': 'train'}, ids)
+print(task)
+
+
+task = client.create_new_task({'method': 'test'}, ids)
+print(task)
+
+
+task = client.create_new_task({'method': 'get_parameters'}, ids)
+print(task)
+
+
+# node_output_param = client.get_results(task_id=task.get("id")) # do I need to specify this here?
+
+
+task = client.create_new_task({'method': 'federated_averaging'}, ids)
+print(task)
+
+
+results = client.get_results(task_id=task.get("id"))
+
+
+
+master_task = client.create_new_task({"master": 1, "method":"master"}, [ids[0]])
+results = client.get_results(task.get("id"))
+print(results)
+
+
+
+
+
+
+
 
 # we can either test a RPC method or the master method (which will trigger the
 # RPC methods also). Lets start by triggering an RPC method and see if that
