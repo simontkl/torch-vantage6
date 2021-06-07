@@ -118,11 +118,14 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     )
 
 
-
-
     # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
+
+    info("Master algorithm(s) complete")
+
+    # return all the messages from the nodes
+    return results
 
 
 # TODO We'll need one client.create_new_task for each iteration of the FedAvg
