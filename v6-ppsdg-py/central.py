@@ -8,6 +8,8 @@ import torch
 import torch.optim as optim
 from .v6simplemodel import Net
 from opacus import PrivacyEngine
+from .algorithms import RPC_get_parameters
+
 
 def initialize_training(gamma, learning_rate, local_dp):
     """
@@ -33,11 +35,10 @@ def initialize_training(gamma, learning_rate, local_dp):
     # print("\033[0;{};49m Rank {} is training on {}".format(device))
 
     # Initialize model and send parameters of server to all workers
-    model = Net()
-    model.to(device)
+    model = Net().to(device)
 
     # intializing optimizer and scheduler
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.5)
 
     # adding DP if true
     if local_dp == True:
@@ -50,36 +51,27 @@ def initialize_training(gamma, learning_rate, local_dp):
     return device, model, optimizer
 
 
-def average_parameters(params, organizations):
+def average_parameters(data, model):
     """
     Get parameters from nodes and calculate the average
-    :param node_output_param: the output of RPC_gather_parameters;
-        first entry and will be ignored accordingly.; these are the parameters of the model after training
-    :param organisations: the organisations defined in master function
+    :param model: torch model
+    :param parameters: parameters of model
+    :param weights:
+    :return:
     """
 
-    parameters = []
-    n_nodes = len(organizations)  # how many organisations?
+    parameters = RPC_get_parameters(data,
+                                    model)  # makes returned parameters from RPC_get_parameters the parameters used in this function
 
-    for output in params:
-        parameters += output["parameters"]
+    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
 
-    return {"params_average": parameters / n_nodes}
-
-    # """
-    # for comparison, the next code snippet provides the torch.distributed implementation
-    # """
-
-#     i = 0
-#     with torch.no_grad():
-#     for param in model.parameters():
-#     # The first entry of the provided parameters when using dist.gather
-#     # method also contains the value from the server, remove that one
-#     minus_server = parameters[i][1:]
-#     # Calculate the average by summing and dividing by the number of
-#     # workers
-#     s = sum(minus_server)
-#     average = s/len(minus_server)
-#     # Change the parameter of the global model to the average
-#     param.data = average
-#     i = i + 1
+    i = 0
+    with torch.no_grad():
+        for param in parameters:
+            s = sum(parameters[i][1:])
+            averaged = s / len(parameters)
+            param.data = averaged
+            i = i + 1
+            return {
+                "params_averaged": averaged
+            }

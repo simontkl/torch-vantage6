@@ -94,37 +94,22 @@ def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
-
 #-----FED_AVG------
 
 # TODO federated averaging:
 
 # FedAvg gathering of parameters
 
-def RPC_get_parameters(data, model, parameters):
+def RPC_get_parameters(data, model):
     """
     Get parameters from nodes
-    :parameters A list of lists of tensors, in other words the list contains
-        an entry for each model parameter, where the entry is a list of tensors
-        to take the average from for that specific parameter. It assumes that
-        the parameters from the server are also contained in this list as the
     """
-    # data_size = len(data) // 3  # number of nodes# size of dataset
-    #
-    # weights = []
-    # # Gather the data sizes on the server
-    # tensor_weights = torch.tensor(data_size)
-    # tensor_weights = tensor_weights[1:]
-    # # Convert all tensors back to weights
-    # for tensor in tensor_weights:
-    #     weights.append(tensor.item())
-
-    RPC_train()
 
     with torch.no_grad():
+        torch.manual_seed(1)
         for parameters in model.parameters():
+            # store parameters in dict
             return {"params": parameters}
-
 
 """
 this might need to be combined with training, so that train 
@@ -134,7 +119,7 @@ returns the parameters or that it at least calls the results of training functio
 
 # training with those averaged parameters
 
-def RPC_fed_avg(data, local_dp, model, device, optimizer, epoch, parameters, delta=1e-5):
+def RPC_fed_avg(data, model, local_dp, epoch, delta=1e-5):
     """
     Training and testing the model on the workers concurrently using federated
     averaging, which means calculating the average of the local model
@@ -142,46 +127,14 @@ def RPC_fed_avg(data, local_dp, model, device, optimizer, epoch, parameters, del
 
     In vantage6, this method will be the training of the model with the average parameters (weighted)
 
-    :parameters will need to be specified in args and take parameters from averaged_parameters
-
     Returns:
         Returns the final model
     """
 
-    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
-    model = parameters
-
+    # train and test with new parameters
     for round in range(1, round + 1):
-
         for epoch in range(1, epoch + 1):
             # Train the model on the workers again
-            RPC_train(data, local_dp, model, device, optimizer, epoch, delta=1e-5)
-            # Test the model on the workers
-            RPC_test(data, model, device)
-
-        gather_params = model.get_parameters()  # or model.parameters()
-
-        RPC_train(model.RPC_average_parameters_weighted(gather_params))
-
-    return model
-
-    ## OR
-
-
-#     parameters = RPC_average_parameters_weighted(data, model, parameters, weights) # then uses those parameters for training
-
-
-# # Gather the parameters after the training round on the server
-#     gather_params = coor.gather_parameters(rank, model, group_size + 1, subgroup)
-#
-#     # If the server
-#     if rank == 0:
-#         # Calculate the average of the parameters and adjust global model
-#         coor.average_parameters_weighted(model, gather_params, weights)
-#
-#     # Send the new model parameters to the workers
-#     coor.broadcast_parameters(model, group)
-
-
+            RPC_train_test()
 
 

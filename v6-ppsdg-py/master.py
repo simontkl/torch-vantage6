@@ -40,7 +40,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     info('Train')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
 
             }
@@ -49,18 +49,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     )
 
 
-    ## return the model and device for testing
-    ## Evaluate non-averaged model
-    info('Test')
-    task = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
 
     info('Gather params')
     task = client.create_new_task(
