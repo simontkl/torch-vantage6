@@ -4,13 +4,17 @@ Date:
 Description: This module contains the master function which is responsible for the communication.
 """
 
+# TODO: in v6-average-py, the only 'results' that were returned were the average partials;
+#   that result was then used to create another dict
+
 import time
 import torch
 from vantage6.tools.util import info
 
+
 # Own modules
 
-def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
+def master(client, data):
     """Master algorithm.
     The master algorithm is the chair of the Round Robin, which makes
     sure everyone waits for their turn to identify themselves.
@@ -30,45 +34,19 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
 
-
-    """
-    return the values and use them as arguments for train 
-    """
-
-
-
-    ## Train without federated averaging
+    # Train without federated averaging
     info('Train and test')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
-                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
+                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
+                                          "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 1,
+                'epoch': 10,
                 'delta': 1e-5
             }
         },
         organization_ids=ids
     )
-
-
-
-    info("Waiting for results")
-    task_id = task.get("id")
-    task = client.get_task(task_id)
-    while not task.get("complete"):
-        task = client.get_task(task_id)
-        info("Waiting for results")
-        time.sleep(1)
-
-    info("Obtaining results")
-    results = client.get_results(task_id=task.get("id"))
-
-    info("Master algorithm(s) complete")
-
-    # return all the messages from the nodes
-    return results
-
-

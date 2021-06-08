@@ -1,5 +1,10 @@
+"""
+Author: Simon Tokloth
+Date:
+Description: This module contains the client that runs the tasks, either individually or together as master_task.
+"""
+
 from vantage6.tools.mock_client import ClientMockProtocol
-import torch
 
 # Initialize the mock server. The datasets simulate the local datasets from
 # the node. In this case we have two parties having two different datasets:
@@ -16,23 +21,8 @@ client = ClientMockProtocol(
 organizations = client.get_organizations_in_my_collaboration()
 org_ids = ids = [organization["id"] for organization in organizations]
 
-
-task = client.create_new_task(
-    input_={
-        'method': 'train_test',
-        'kwargs': {
-            'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-            'log_interval': 10,
-            'local_dp': False,
-            'epoch': 1,
-            'delta':  1e-5
-        }
-    }, organization_ids=org_ids)
-print(task)
-
-results = client.get_results(task_id=task.get("id"))
-
-
-master_task = client.create_new_task({"master": 1, "method":"master"}, [ids[0]])
-results = client.get_results(task.get("id"))
+# master task that executes all RPC_methods
+# (can also test individually by calling each RPC_method as a task w/o master_task
+master_task = client.create_new_task({"master": 1, "method": "master"}, [org_ids[0]])
+results = client.get_results(master_task.get("id"))
 print(results)

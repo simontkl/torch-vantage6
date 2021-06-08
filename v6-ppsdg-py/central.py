@@ -6,8 +6,10 @@ Description: The central algorithm receives the parameters from the nodes and di
 
 import torch
 import torch.optim as optim
-from .v6simplemodel import Net
 from opacus import PrivacyEngine
+
+# Own modules
+from .v6simplemodel import Net
 
 
 def initialize_training(learning_rate, local_dp):
@@ -18,12 +20,8 @@ def initialize_training(learning_rate, local_dp):
     This should be sent from server to all nodes.
 
     Args:
-        data: contains the local data from the node
-        gamma: Learning rate step gamma (default: 0.7)
         learning_rate: The learning rate for training.
-        cuda: Should we use CUDA?
         local_dp: bool whether to apply local_dp or not.
-
     Returns:
         Returns the device, model, optimizer and scheduler.
     """
@@ -36,7 +34,7 @@ def initialize_training(learning_rate, local_dp):
     # Initialize model and send parameters of server to all workers
     model = Net().to(device)
 
-    # intializing optimizer and scheduler
+    # initializing optimizer and scheduler
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.5)
 
     # adding DP if true
