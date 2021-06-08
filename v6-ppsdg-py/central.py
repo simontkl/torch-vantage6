@@ -51,6 +51,8 @@ def initialize_training(gamma, learning_rate, local_dp):
     return device, model, optimizer
 
 
+# TODO: make this actually average the parameters of RPC_get_parameters
+
 def average_parameters(data, model):
     """
     Get parameters from nodes and calculate the average

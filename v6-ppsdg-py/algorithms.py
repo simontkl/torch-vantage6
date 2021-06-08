@@ -16,15 +16,7 @@ from .central import initialize_training
 # if don't want to use local in RPC call: RPC_init_training(_, rank, ...) maybe
 
 
-
-
-## TODO: QUESTION: If RPC_train is only used by node method (Fed_avg), does it need the local parameter? Or can it just be def train(color, model, ...)?
-
 # basic training of the model
-
-# Question: train gets model, device, optimizer from initialize_training, which is specified within train function,
-# why do I need to call it again before executing the function? Because in vantage6 when I sent the tasks I cannot define that but only in the master function
-
 
 def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp, epoch, delta=1e-5):
     """
@@ -96,9 +88,10 @@ def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp
 
 #-----FED_AVG------
 
-# TODO federated averaging:
 
 # FedAvg gathering of parameters
+
+# TODO: make this return parameters from model
 
 def RPC_get_parameters(data, model):
     """
@@ -118,6 +111,8 @@ returns the parameters or that it at least calls the results of training functio
 
 
 # training with those averaged parameters
+
+# TODO: use averaged parameters from average_parameters for training
 
 def RPC_fed_avg(data, model, local_dp, epoch, delta=1e-5):
     """
