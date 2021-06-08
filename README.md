@@ -75,3 +75,6 @@ vantage6-v2.0
 
 Here, __init__.py is the algorithm which will import v6simplemodel.py, v6train.py, and db.py.
 
+
+
+in order to load the datasets, mock_client.py needs to be changed to torch.load(datasets) instead of pandas.read_csv(datasets). Don't forget to import torch for that
