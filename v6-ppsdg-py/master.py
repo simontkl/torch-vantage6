@@ -6,6 +6,10 @@ Description: This module contains the master function which is responsible for t
 
 import time
 import torch
+import torch
+import torch.optim as optim
+from .v6simplemodel import Net
+from opacus import PrivacyEngine
 from vantage6.tools.util import info
 
 
@@ -24,38 +28,53 @@ def master(client, data):
     organizations = client.get_organizations_in_my_collaboration()
     ids = [organization.get("id") for organization in organizations]
 
-    # Request all participating parties to compute their partial. This
-    # will create a new task at the central server for them to pick up.
-    # We've used a kwarg but is is also possible to use `args`. Although
-    # we prefer kwargs as it is clearer.
+    # Determine the device to train on
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
 
-    """
-    return the values and use them as arguments for train 
-    """
+    # Initialize model and send parameters of server to all workers
+    model = Net()
+
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+
+    # if local_dp:
+    #     privacy_engine = PrivacyEngine(model, batch_size=64,
+    #                                    sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+    #                                    max_grad_norm=1.0, )
+    #     privacy_engine.attach(optimizer)
 
     # Train without federated averaging
-    info('Train')
+    info('Train_test')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
+                'model': model,
+                'parameters': model.parameters(),
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
+                'optimizer': optimizer,
+                'device': device,
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 10,
-                'delta': 1e-5
+                'epoch': 1,
+                'round': 1,
+                'delta': 1e-5,
+                'optim': True
             }
         },
         organization_ids=ids
     )
+
+    trained_model = torch.load(
+        'C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth')
 
     info('Gather params')
     task = client.create_new_task(
         input_={
             'method': 'get_parameters',
             'kwargs': {
-
+                'model': trained_model
             }
         },
         organization_ids=ids
@@ -88,62 +107,29 @@ def master(client, data):
         global_sum += output["params"]
         global_count += len(global_sum)
 
-    averaged_parameters = {global_sum / global_count}
+    averaged_parameters = global_sum/global_count
 
-    # using returned averaged_parameters as params
-    info("Federated averaging")
+    new_params = {'averaged_parameters': averaged_parameters}
+
+    info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
-            'method': 'fed_avg',
+            'method': 'train_test',
             'kwargs': {
+                'model': model,
+                'parameters': new_params,
+                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
+                                          "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
+                'optimizer': optimizer,
+                'device': device,
+                'log_interval': 10,
+                'local_dp': False,
+                'epoch': 1,
                 'round': 1,
-                'model': averaged_parameters
+                'delta': 1e-5,
+                'optim': False
             }
         },
         organization_ids=ids
     )
 
-
-
-
-
-
-
-
-
-
-    # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
-    for node_output_param in organizations:
-        average_parameters(node_output_param, organizations)
-
-    # this function returns a dictionary of the parameters; param = node_output_param, organizations = organizations
-
-    """
-    the training happens at the worker nodes. However, as no node-to-node communication is possible, 
-    the parameters which are returned by the RPC_get_parameters function. The averaged parameters are then returned 
-    and used in the federated_averaging method at the workers with the new parameters
-    """
-
-    info('Federated Averaging training')
-    task = client.create_new_task(
-        input_={
-            'method': 'federated_averaging',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
-
-
-    # Once we now the partials are complete, we can collect them.
-    info("Obtaining results")
-    results = client.get_results(task_id=task.get("id"))
-
-    info("Master algorithm(s) complete")
-
-    # return all the messages from the nodes
-    return results
-
-
-# TODO We'll need one client.create_new_task for each iteration of the FedAvg
