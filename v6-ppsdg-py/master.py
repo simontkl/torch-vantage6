@@ -8,7 +8,7 @@ import time
 from vantage6.tools.util import info
 
 # Own modules
-from .central import average_parameters
+from .central import average_parameters, initialize_training
 
 
 def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
@@ -30,16 +30,12 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # will create a new task at the central server for them to pick up.
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
-    info('Initialising training')
-    task = client.create_new_task(
-        input_={
-            'method': 'initialize_training',
-            'kwargs': {
 
-            }
-        },
-        organization_ids=ids
-    )
+    initialize_training()
+
+    """
+    return the values and use them as arguments for train 
+    """
 
     ## Train without federated averaging
     info('Train')
@@ -53,6 +49,8 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         organization_ids=ids
     )
 
+
+    ## return the model and device for testing
     ## Evaluate non-averaged model
     info('Test')
     task = client.create_new_task(
