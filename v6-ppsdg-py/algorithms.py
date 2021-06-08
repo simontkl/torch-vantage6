@@ -18,7 +18,7 @@ from .central import initialize_training
 
 # basic training of the model
 
-def RPC_train_test(data, **kwargs):
+def RPC_train_test(data, log_interval, local_dp, epoch, delta):
     """
     Training the model on all batches.
     Args:
@@ -34,18 +34,9 @@ def RPC_train_test(data, **kwargs):
 
     device, model, optimizer = initialize_training(0.01, False)
 
-    log_interval = 10
-
-    epoch = 1
-
-    local_dp = False
-
     train_loader = data
 
-    data2 =  torch.load(
-        "C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt")
-
-    test_loader = data2
+    test_loader = torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt")
 
     model.train()
 

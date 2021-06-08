@@ -16,12 +16,19 @@ organizations = client.get_organizations_in_my_collaboration()
 org_ids = ids = [organization["id"] for organization in organizations]
 
 
-task = client.create_new_task({'method': 'train_test'}, ids)
+task = client.create_new_task(
+    input_={
+        'method': 'train_test',
+        'kwargs': {
+            'log_interval': 10,
+            'local_dp': False,
+            'epoch': 1,
+            'delta':  1e-5
+        }
+    }, organization_ids=org_ids)
 print(task)
 
-
 results = client.get_results(task_id=task.get("id"))
-
 
 
 master_task = client.create_new_task({"master": 1, "method":"master"}, [ids[0]])

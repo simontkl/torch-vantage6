@@ -36,7 +36,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     """
 
 
-    learning_rate = 0.01
 
     ## Train without federated averaging
     info('Train and test')
@@ -44,7 +43,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         input_={
             'method': 'train_test',
             'kwargs': {
-                'data2': 'test_loader',
                 'log_interval': 10,
                 'local_dp': False,
                 'epoch': 1,
