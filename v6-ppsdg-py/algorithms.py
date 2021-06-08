@@ -112,10 +112,7 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
-
-# Federated Averaging:
-
-# FedAvg gathering of parameters
+# Gathering of parameters for federated averaging
 def RPC_get_parameters(data, model):
     """
     Get parameters from nodes
