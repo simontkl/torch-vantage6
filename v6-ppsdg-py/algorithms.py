@@ -114,7 +114,7 @@ returns the parameters or that it at least calls the results of training functio
 
 # TODO: use averaged parameters from average_parameters for training
 
-def RPC_fed_avg(data, model, local_dp, epoch, delta=1e-5):
+def RPC_fed_avg(data, test_loader, model, local_dp, epoch, round, delta):
     """
     Training and testing the model on the workers concurrently using federated
     averaging, which means calculating the average of the local model
