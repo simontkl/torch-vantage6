@@ -5,12 +5,11 @@ Description: This module contains the master function which is responsible for t
 """
 
 import time
+import torch
 from vantage6.tools.util import info
 
-# Own modules
-from .central import average_parameters
 
-def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
+def master(client, data):
     """Master algorithm.
     The master algorithm is the chair of the Round Robin, which makes
     sure everyone waits for their turn to identify themselves.
@@ -30,25 +29,26 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
 
-
-
     """
     return the values and use them as arguments for train 
     """
 
-    ## Train without federated averaging
+    # Train without federated averaging
     info('Train')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
-
+                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
+                                          "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
+                'log_interval': 10,
+                'local_dp': False,
+                'epoch': 10,
+                'delta': 1e-5
             }
         },
         organization_ids=ids
     )
-
-
 
     info('Gather params')
     task = client.create_new_task(
@@ -60,7 +60,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         },
         organization_ids=ids
     )
-
 
     '''
     Now we need to wait until all organizations(/nodes) finished
@@ -76,6 +75,42 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         task = client.get_task(task_id)
         info("Waiting for results")
         time.sleep(1)
+
+    # Once we now the partials are complete, we can collect them.
+    info("Obtaining results")
+    results = client.get_results(task_id=task.get("id"))
+
+    # averaging of returned parameters
+    global_sum = 0
+    global_count = 0
+
+    for output in results:
+        global_sum += output["params"]
+        global_count += len(global_sum)
+
+    averaged_parameters = {global_sum / global_count}
+
+    # using returned averaged_parameters as params
+    info("Federated averaging")
+    task = client.create_new_task(
+        input_={
+            'method': 'fed_avg',
+            'kwargs': {
+                'round': 1,
+                'model': averaged_parameters
+            }
+        },
+        organization_ids=ids
+    )
+
+
+
+
+
+
+
+
+
 
     # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
     for node_output_param in organizations:

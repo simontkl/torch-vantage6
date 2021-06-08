@@ -11,7 +11,7 @@ from opacus import PrivacyEngine
 from .algorithms import RPC_get_parameters
 
 
-def initialize_training(gamma, learning_rate, local_dp):
+def initialize_training(learning_rate, local_dp):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -19,10 +19,7 @@ def initialize_training(gamma, learning_rate, local_dp):
     This should be sent from server to all nodes.
 
     Args:
-        data: contains the local data from the node
-        gamma: Learning rate step gamma (default: 0.7)
         learning_rate: The learning rate for training.
-        cuda: Should we use CUDA?
         local_dp: bool whether to apply local_dp or not.
 
     Returns:
@@ -37,7 +34,7 @@ def initialize_training(gamma, learning_rate, local_dp):
     # Initialize model and send parameters of server to all workers
     model = Net().to(device)
 
-    # intializing optimizer and scheduler
+    # initializing optimizer and scheduler
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.5)
 
     # adding DP if true
@@ -53,24 +50,24 @@ def initialize_training(gamma, learning_rate, local_dp):
 
 # TODO: make this actually average the parameters of RPC_get_parameters
 
-def average_parameters(client, task):
-    """
-    Get parameters from nodes and calculate the average
-    :param client
-    :param task
-    :return:
-    """
-
-    # get parameters from method before. Does this work?
-    parameters = client.get_results(task_id=task.get("id"))
-
-    i = 0
-    with torch.no_grad():
-        for param in parameters:
-            s = sum(parameters[i][1:])
-            averaged = s / len(parameters)
-            param.data = averaged
-            i = i + 1
-            return {
-                "params_averaged": averaged
-            }
+# def average_parameters(client, task):
+#     """
+#     Get parameters from nodes and calculate the average
+#     :param client
+#     :param task
+#     :return:
+#     """
+#
+#     # get parameters from method before. Does this work?
+#     parameters = client.get_results(task_id=task.get("id"))
+#
+#     i = 0
+#     with torch.no_grad():
+#         for param in parameters:
+#             s = sum(parameters[i][1:])
+#             averaged = s / len(parameters)
+#             param.data = averaged
+#             i = i + 1
+#             return {
+#                 "params_averaged": averaged
+#             }
