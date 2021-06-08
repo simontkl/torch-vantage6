@@ -1,4 +1,5 @@
 from vantage6.tools.mock_client import ClientMockProtocol
+import torch
 
 # Initialize the mock server. The datasets simulate the local datasets from
 # the node. In this case we have two parties having two different datasets:
@@ -20,6 +21,7 @@ task = client.create_new_task(
     input_={
         'method': 'train_test',
         'kwargs': {
+            'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
             'log_interval': 10,
             'local_dp': False,
             'epoch': 1,

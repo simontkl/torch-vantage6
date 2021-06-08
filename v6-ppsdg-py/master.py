@@ -43,6 +43,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         input_={
             'method': 'train_test',
             'kwargs': {
+                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'log_interval': 10,
                 'local_dp': False,
                 'epoch': 1,
