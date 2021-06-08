@@ -8,8 +8,7 @@ import time
 from vantage6.tools.util import info
 
 # Own modules
-from .central import average_parameters, initialize_training
-
+from .central import average_parameters
 
 def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
     """Master algorithm.
@@ -31,7 +30,7 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
 
-    initialize_training()
+
 
     """
     return the values and use them as arguments for train 

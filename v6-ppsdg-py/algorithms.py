@@ -6,13 +6,9 @@ Description: This module contains the RPC_methods including the training and fed
 
 import torch
 import torch.nn.functional as F
-import torch.optim as optim
-from opacus import PrivacyEngine
-
 
 # Own modules
-from .v6simplemodel import Net
-
+from .central import initialize_training
 
 # ----NODE-----
 # RPC_methods always need to start with local
@@ -30,25 +26,31 @@ from .v6simplemodel import Net
 # why do I need to call it again before executing the function? Because in vantage6 when I sent the tasks I cannot define that but only in the master function
 
 
-def RPC_train(data, log_interval, local_dp, epoch, round, delta=1e-5):
+def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp, epoch, delta=1e-5):
     """
     Training the model on all batches.
     Args:
         epoch: The number of the epoch the training is in.
         round: The number of the round the training is in.
+        log_interval: The amount of rounds before logging intermediate loss.
         local_dp: Training with local DP?
         delta: The delta value of DP to aim for (default: 1e-5).
+        data: dataset for train_loader will need to be specified here
+        data2: dataset for test_loader will need to be specified here
     """
     # loading arguments/parameters from first RPC_method
-    device, model, optimizer = RPC_initialize_training(data, gamma, learning_rate, local_dp)  # is this allowed in vantage6? calling one RPC_method in another?
+
+    device, model, optimizer = initialize_training(gamma, learning_rate, local_dp)
+
+    train_loader = data
+
+    test_loader = data2
 
     model.train()
-    # , (data, target)
-    for batch_idx, data in enumerate(data, 0):
-        #         batch = (data, target)
-        data, target = data
+
+    for batch_idx, (data, target) in enumerate(train_loader):
         # Send the data and target to the device (cpu/gpu) the model is at
-        #         data, target = data.to(device), target.to(device)
+        data, target = data.to(device), target.to(device)
         # Clear gradient buffers
         optimizer.zero_grad()
         # Run the model on the data
@@ -57,73 +59,21 @@ def RPC_train(data, log_interval, local_dp, epoch, round, delta=1e-5):
         loss = F.nll_loss(output, target)
         # Calculate the gradients
         loss.backward()
+        # Update model
         optimizer.step()
-        print(loss)
-    #     # Update the model weights
-    #     if train:
-    #         optimizer.step()
-    #     return loss
 
-    #         if batch_idx % log_interval == 0:
-    #             print('\033[0;{};49m Train on Rank {}, Round {}, Epoch {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-    #             round, epoch, batch_idx * len(batch[0]), len(train_loader.dataset),
-    #             100. * batch_idx / len(train_loader), loss.item()))
+        if batch_idx % log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                       100. * batch_idx / len(train_loader), loss.item()))
 
     # Adding differential privacy or not
     if local_dp == True:
         epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-        # print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
-
-
-#     running_loss = 0.0
-#     for i, data in enumerate(trainloader, 0):
-#         # get the inputs; data is a list of [inputs, labels]
-#         inputs, labels = data
-
-#         # zero the parameter gradients
-#         optimizer.zero_grad()
-
-#         # forward + backward + optimize
-#         outputs = net(inputs)
-#         loss = criterion(outputs, labels)
-#         loss.backward()
-#         optimizer.step()
-
-#         # print statistics
-#         running_loss += loss.item()
-#         if i % 2000 == 1999:    # print every 2000 mini-batches
-#             print('[%d, %5d] loss: %.3f' %
-#                   (epoch + 1, i + 1, running_loss / 2000))
-#             running_loss = 0.0
-
-# Model Evaluation
-
-def RPC_test(data):
-    """
-    Tests the model.
-
-    Args:
-        color: The color for the terminal output for this worker.
-        model: The model to test.
-        device: The device to test the model on.
-        test_loader: The local loader for test local. -> no inside function
-    """
-
-
-#     test_loader = torch.load("./testing.pt")
-    test_loader = torch.utils.data.DataLoader(datasets.MNIST('../mnist_data',
-                                                          download=True,
-                                                              train=False,
-                                                          transform=transforms.Compose([
-                                                              transforms.ToTensor(), # first, convert image to PyTorch tensor
-                                                              transforms.Normalize((0.1307,), (0.3081,)) # normalize inputs
-                                                          ])),
-                                           batch_size=10,
-                                           shuffle=True)
-
-    device, model, optimizer = RPC_initialize_training(data, gamma, learning_rate, local_dp)
+    #             print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
 
     model.eval()
+
     test_loss = 0
     correct = 0
     with torch.no_grad():
@@ -140,11 +90,9 @@ def RPC_test(data):
 
     test_loss /= len(test_loader.dataset)
 
-    print(test_loss)
-
-    # print('\033[0;{};49m \nAverage loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-    #         test_loss, correct, len(test_loader.dataset),
-    #         100. * correct / len(test_loader.dataset)))
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
 
 
 #-----FED_AVG------
