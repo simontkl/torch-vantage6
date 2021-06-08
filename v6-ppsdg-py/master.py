@@ -5,6 +5,7 @@ Description: This module contains the master function which is responsible for t
 """
 
 import time
+import torch
 from vantage6.tools.util import info
 
 # Own modules
@@ -34,6 +35,9 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     return the values and use them as arguments for train 
     """
 
+
+    learning_rate = 0.01
+
     ## Train without federated averaging
     info('Train and test')
     task = client.create_new_task(
@@ -43,7 +47,8 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
                 'data2': 'test_loader',
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 1
+                'epoch': 1,
+                'delta': 1e-5
             }
         },
         organization_ids=ids

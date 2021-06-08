@@ -6,7 +6,7 @@ from vantage6.tools.mock_client import ClientMockProtocol
 # package. This is the name you specified in `setup.py`, in our case that
 # would be v6-average-py.
 client = ClientMockProtocol(
-    datasets=["./local/MNIST/processed/training.pt", "./local/MNIST/processed/testing.pt"],
+    datasets=["./local/MNIST/processed/training.pt"],
     module="v6-ppsdg-py"
 )
 
