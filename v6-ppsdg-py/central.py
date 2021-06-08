@@ -53,19 +53,16 @@ def initialize_training(gamma, learning_rate, local_dp):
 
 # TODO: make this actually average the parameters of RPC_get_parameters
 
-def average_parameters(data, model):
+def average_parameters(client, task):
     """
     Get parameters from nodes and calculate the average
-    :param model: torch model
-    :param parameters: parameters of model
-    :param weights:
+    :param client
+    :param task
     :return:
     """
 
-    parameters = RPC_get_parameters(data,
-                                    model)  # makes returned parameters from RPC_get_parameters the parameters used in this function
-
-    # TODO: local: since we usually just get the parameters, this well be an entire task, therefore, we might need to train for each individually
+    # get parameters from method before. Does this work?
+    parameters = client.get_results(task_id=task.get("id"))
 
     i = 0
     with torch.no_grad():

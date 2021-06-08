@@ -77,10 +77,10 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         info("Waiting for results")
         time.sleep(1)
 
-    node_output_param = client.get_results(task_id=task.get("id"))
-
     # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
-    average_parameters(node_output_param, organizations)
+    for node_output_param in organizations:
+        average_parameters(node_output_param, organizations)
+
     # this function returns a dictionary of the parameters; param = node_output_param, organizations = organizations
 
     """
