@@ -8,7 +8,6 @@ import time
 from vantage6.tools.util import info
 
 # Own modules
-from .central import average_parameters
 
 def master(client, data, *args, **kwargs): #central algorithm uses the methods of node_algorithm
     """Master algorithm.
@@ -31,43 +30,26 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     # we prefer kwargs as it is clearer.
 
 
-
     """
     return the values and use them as arguments for train 
     """
 
     ## Train without federated averaging
-    info('Train')
+    info('Train and test')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
-
+                'data2': 'test_loader',
+                'log_interval': 10,
+                'local_dp': False,
+                'epoch': 1
             }
         },
         organization_ids=ids
     )
 
 
-
-    info('Gather params')
-    task = client.create_new_task(
-        input_={
-            'method': 'get_parameters',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
-
-
-    '''
-    Now we need to wait until all organizations(/nodes) finished
-    their partial. We do this by polling the server for results. It is
-    also possible to subscribe to a websocket channel to get status
-    updates.
-    '''
 
     info("Waiting for results")
     task_id = task.get("id")
@@ -77,31 +59,6 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
         info("Waiting for results")
         time.sleep(1)
 
-    # calculate the average of the parameters received from model (RPC_get_parameters is executed at each node and should return  those parameters)
-    for node_output_param in organizations:
-        average_parameters(node_output_param, organizations)
-
-    # this function returns a dictionary of the parameters; param = node_output_param, organizations = organizations
-
-    """
-    the training happens at the worker nodes. However, as no node-to-node communication is possible, 
-    the parameters which are returned by the RPC_get_parameters function. The averaged parameters are then returned 
-    and used in the federated_averaging method at the workers with the new parameters
-    """
-
-    info('Federated Averaging training')
-    task = client.create_new_task(
-        input_={
-            'method': 'federated_averaging',
-            'kwargs': {
-
-            }
-        },
-        organization_ids=ids
-    )
-
-
-    # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
     results = client.get_results(task_id=task.get("id"))
 
@@ -111,4 +68,3 @@ def master(client, data, *args, **kwargs): #central algorithm uses the methods o
     return results
 
 
-# TODO We'll need one client.create_new_task for each iteration of the FedAvg

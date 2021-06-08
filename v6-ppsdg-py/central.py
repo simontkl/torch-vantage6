@@ -8,10 +8,9 @@ import torch
 import torch.optim as optim
 from .v6simplemodel import Net
 from opacus import PrivacyEngine
-from .algorithms import RPC_get_parameters
 
 
-def initialize_training(gamma, learning_rate, local_dp):
+def initialize_training(learning_rate, local_dp):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -49,28 +48,3 @@ def initialize_training(gamma, learning_rate, local_dp):
 
     # returns device, model, optimizer which will be needed in train and test
     return device, model, optimizer
-
-
-# TODO: make this actually average the parameters of RPC_get_parameters
-
-def average_parameters(client, task):
-    """
-    Get parameters from nodes and calculate the average
-    :param client
-    :param task
-    :return:
-    """
-
-    # get parameters from method before. Does this work?
-    parameters = client.get_results(task_id=task.get("id"))
-
-    i = 0
-    with torch.no_grad():
-        for param in parameters:
-            s = sum(parameters[i][1:])
-            averaged = s / len(parameters)
-            param.data = averaged
-            i = i + 1
-            return {
-                "params_averaged": averaged
-            }

@@ -18,7 +18,7 @@ from .central import initialize_training
 
 # basic training of the model
 
-def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp, epoch, delta=1e-5):
+def RPC_train_test(data, data2, log_interval, local_dp, epoch, delta=1e-5):
     """
     Training the model on all batches.
     Args:
@@ -32,7 +32,7 @@ def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp
     """
     # loading arguments/parameters from first RPC_method
 
-    device, model, optimizer = initialize_training(gamma, learning_rate, local_dp)
+    device, model, optimizer = initialize_training(learning_rate, local_dp)
 
     train_loader = data
 
@@ -85,51 +85,3 @@ def RPC_train_test(data, data2, device, model, optimizer, log_interval, local_dp
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-#-----FED_AVG------
-
-
-# FedAvg gathering of parameters
-
-# TODO: make this return parameters from model
-
-def RPC_get_parameters(data, model):
-    """
-    Get parameters from nodes
-    """
-
-    with torch.no_grad():
-        torch.manual_seed(1)
-        for parameters in model.parameters():
-            # store parameters in dict
-            return {"params": parameters}
-
-"""
-this might need to be combined with training, so that train 
-returns the parameters or that it at least calls the results of training function
-"""
-
-
-# training with those averaged parameters
-
-# TODO: use averaged parameters from average_parameters for training
-
-def RPC_fed_avg(data, model, local_dp, epoch, delta=1e-5):
-    """
-    Training and testing the model on the workers concurrently using federated
-    averaging, which means calculating the average of the local model
-    parameters after a number of (local) epochs each training round.
-
-    In vantage6, this method will be the training of the model with the average parameters (weighted)
-
-    Returns:
-        Returns the final model
-    """
-
-    # train and test with new parameters
-    for round in range(1, round + 1):
-        for epoch in range(1, epoch + 1):
-            # Train the model on the workers again
-            RPC_train_test()
-
-
