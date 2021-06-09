@@ -36,6 +36,12 @@ def master(client, data):
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
+    privacy_engine = PrivacyEngine(model, batch_size=64,
+                                    sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                    max_grad_norm=1.0, )
+    privacy_engine.attach(optimizer)
+    
+    privacy_engine = privacy_engine
 
     # Train without federated averaging
     info('Train_test')
@@ -47,7 +53,7 @@ def master(client, data):
                 'parameters': model.parameters(),
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-                'optimizer': optimizer,
+                'optimizer': optimizer, # privacy_engine
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
