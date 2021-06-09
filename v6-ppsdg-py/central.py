@@ -37,12 +37,8 @@ def initialize_training(learning_rate, local_dp):
     # initializing optimizer and scheduler
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.5)
 
-    # adding DP if true
-    if local_dp == True:
-        privacy_engine = PrivacyEngine(model, batch_size=64,
-                                       sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                       max_grad_norm=1.0, )
-        privacy_engine.attach(optimizer)
+
+
 
     # returns device, model, optimizer which will be needed in train and test
     return device, model, optimizer
