@@ -53,7 +53,7 @@ def master(client, data):
                 'parameters': model.parameters(),
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-                'optimizer': optimizer, # privacy_engine
+                'optimizer': optimizer, # privacy_engine or optimizer and new argument local_dp and then in train_test: privacy_engine.attach(optimizer)
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
