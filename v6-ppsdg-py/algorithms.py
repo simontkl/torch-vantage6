@@ -33,8 +33,6 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
 
     train_loader = data
 
-
-
     for epoch in range(1, epoch + 1):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
@@ -52,18 +50,19 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
             optimizer.step()
 
 
-
-
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                            100. * batch_idx / len(train_loader), loss.item()))
 
+        epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+        print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+
         model.eval()
 
         test_loss = 0
-
         correct = 0
+
         with torch.no_grad():
             for data, target in test_loader:
                 # Send the local and target to the device (cpu/gpu) the model is at
@@ -83,7 +82,3 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
                          100. * correct / len(test_loader.dataset)))
 
 
-# Adding differential privacy or not
-
-            # epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-            # print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
