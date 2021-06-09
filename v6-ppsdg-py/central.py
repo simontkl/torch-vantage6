@@ -12,7 +12,7 @@ from opacus import PrivacyEngine
 from .v6simplemodel import Net
 
 
-def initialize_training(learning_rate, local_dp=True):
+def initialize_training(learning_rate, local_dp):
     """
     Initializes the model, optimizer and scheduler and shares the parameters
     with all the workers in the group.
@@ -38,10 +38,14 @@ def initialize_training(learning_rate, local_dp=True):
     # initializing optimizer and scheduler
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.5)
 
-    privacy_engine = PrivacyEngine(model, batch_size=64,
-                                    sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                    max_grad_norm=1.0, )
-    privacy_engine.attach(optimizer)
+    if local_dp:
+        privacy_engine = PrivacyEngine(model, batch_size=64,
+                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                        max_grad_norm=1.0, )
+        privacy_engine.attach(optimizer)
+
+        optimizer = optimizer
 
     # returns device, model, optimizer which will be needed in train and test
     return device, model, optimizer
+
