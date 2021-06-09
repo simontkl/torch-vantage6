@@ -107,7 +107,7 @@ def master(client, data):
         global_sum += output["params"]
         global_count += len(global_sum)
 
-    averaged_parameters = (global_sum/global_count) / len(organizations)  # in testing this would probably mean / 1
+    averaged_parameters = global_sum/global_count
 
     new_params = {'averaged_parameters': averaged_parameters}
 
