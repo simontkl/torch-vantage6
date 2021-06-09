@@ -43,7 +43,6 @@ def master(client, data):
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'log_interval': 10,
-                'local_dp': True,
                 'epoch': 10,
                 'delta': 1e-5
             }

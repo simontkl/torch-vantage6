@@ -16,7 +16,7 @@ from .central import initialize_training
 
 
 # basic training and testing of the model
-def RPC_train_test(data, test_loader, log_interval, local_dp, epoch, delta):
+def RPC_train_test(data, test_loader, log_interval, epoch, delta):
     """
     Training the model on all batches.
     Args:
@@ -55,13 +55,9 @@ def RPC_train_test(data, test_loader, log_interval, local_dp, epoch, delta):
                            100. * batch_idx / len(train_loader), loss.item()))
 
         # Adding differential privacy or not
-        if local_dp:
-            privacy_engine = PrivacyEngine(model, batch_size=64,
-                                           sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                           max_grad_norm=1.0, )
-            privacy_engine.attach(optimizer)
-            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-        #             print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
+
+            # epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+            # print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
 
     model.eval()
 
