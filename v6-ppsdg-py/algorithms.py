@@ -65,7 +65,7 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
                             epoch, batch_idx * len(data), len(train_loader.dataset),
                             100. * batch_idx / len(train_loader), loss.item()))
 
-            if local_dp == True:
+            if local_dp:
                 privacy_engine = PrivacyEngine(model, batch_size=64,
                                                 sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
                                                 max_grad_norm=1.0, )
