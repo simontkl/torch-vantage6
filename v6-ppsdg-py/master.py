@@ -10,6 +10,8 @@ import torch
 import torch.optim as optim
 from .v6simplemodel import Net
 from vantage6.tools.util import info
+from opacus import PrivacyEngine
+
 
 
 def master(client, data):
@@ -32,16 +34,20 @@ def master(client, data):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Initialize model and send parameters of server to all workers
-    model = Net()
+    model = Net().to(device)
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
-    privacy_engine = PrivacyEngine(model, batch_size=64,
-                                    sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                    max_grad_norm=1.0, )
-    privacy_engine.attach(optimizer)
-    
-    privacy_engine = privacy_engine
+    """
+    Currently the only way to (de-)activate local_dp is by (un-)commenting the next 4 lines
+    """
+    #
+    # privacy_engine = PrivacyEngine(model, batch_size=64,
+    #                                     sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+    #                                     max_grad_norm=1.0, )
+    # privacy_engine.attach(optimizer)
+
+
 
     # Train without federated averaging
     info('Train_test')
@@ -53,11 +59,11 @@ def master(client, data):
                 'parameters': model.parameters(),
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-                'optimizer': optimizer, # privacy_engine or optimizer and new argument local_dp and then in train_test: privacy_engine.attach(optimizer)
+                'optimizer': optimizer,
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
-                'epoch': 1,
+                'epoch': 2,
                 'round': 1,
                 'delta': 1e-5,
             }
@@ -110,6 +116,13 @@ def master(client, data):
 
     new_params = {'averaged_parameters': averaged_parameters}
 
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+
+    privacy_engine = PrivacyEngine(model, batch_size=64,
+                                   sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                   max_grad_norm=1.0, )
+    privacy_engine.attach(optimizer)
+
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
@@ -123,7 +136,7 @@ def master(client, data):
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 1,
+                'epoch': 20,
                 'round': 1,
                 'delta': 1e-5,
             }
