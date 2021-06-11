@@ -11,8 +11,7 @@ import torch.optim as optim
 from .v6simplemodel import Net
 from vantage6.tools.util import info
 from opacus import PrivacyEngine
-
-
+import collections
 
 def master(client, data):
     """Master algorithm.
@@ -56,26 +55,28 @@ def master(client, data):
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
-                'epoch': 2,
+                'epoch': 1,
                 'round': 1,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
     )
 
-    trained_model = torch.load(
-        'C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth')
+    results = client.get_results(task_id=task.get("id"))
 
-    info('Gather params')
-    task = client.create_new_task(
-        input_={
-            'method': 'get_parameters',
-            'kwargs': {
-                'model': trained_model
-            }
-        },
-        organization_ids=ids
-    )
+    # trained_model = torch.load(
+    #     'C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth')
+
+    # info('Gather params')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'get_parameters',
+    #         'kwargs': {
+    #             'model': results
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
 
     '''
     Now we need to wait until all organizations(/nodes) finished
@@ -84,17 +85,17 @@ def master(client, data):
     updates.
     '''
 
-    info("Waiting for results")
-    task_id = task.get("id")
-    task = client.get_task(task_id)
-    while not task.get("complete"):
-        task = client.get_task(task_id)
-        info("Waiting for results")
-        time.sleep(1)
+    # info("Waiting for results")
+    # task_id = task.get("id")
+    # task = client.get_task(task_id)
+    # while not task.get("complete"):
+    #     task = client.get_task(task_id)
+    #     info("Waiting for results")
+    #     time.sleep(1)
 
-    # Once we now the partials are complete, we can collect them.
-    info("Obtaining results")
-    results = client.get_results(task_id=task.get("id"))
+    # # Once we now the partials are complete, we can collect them.
+    # info("Obtaining results")
+    # results = client.get_results(task_id=task.get("id"))
 
     # averaging of returned parameters
     global_sum = 0
@@ -104,9 +105,13 @@ def master(client, data):
         global_sum += output["params"]
         global_count += len(global_sum)
 
-    averaged_parameters = global_sum/global_count
+    # averaged_parameters = collections.OrderedDict()
+    #
+    # for parameters in results:
+    #     averaged_parameters.
+    averaged_parameters = [global_sum/global_count]
 
-    new_params = {'averaged_parameters': averaged_parameters}
+    # new_params = {'averaged_parameters': averaged_parameters}
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
@@ -117,18 +122,19 @@ def master(client, data):
             'method': 'train_test',
             'kwargs': {
                 'model': model,
-                'parameters': new_params,
+                'parameters': averaged_parameters,
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'optimizer': optimizer,
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 5,
+                'epoch': 1,
                 'round': 1,
                 'delta': 1e-5,
             }
         },
         organization_ids=ids
     )
+
 
