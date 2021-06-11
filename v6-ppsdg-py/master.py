@@ -60,8 +60,7 @@ def master(client, data):
                 'round': 1,
                 'delta': 1e-5,
             }
-        },
-        organization_ids=ids
+        },        organization_ids=ids
     )
 
     trained_model = torch.load(
