@@ -16,7 +16,7 @@ from .central import initialize_training
 
 
 # basic training and testing of the model
-def RPC_train_test(data, test_loader, log_interval, epoch, delta):
+def RPC_train_test(data, test_loader, log_interval, epoch, local_dp, delta):
     """
     Training the model on all batches.
     Args:
@@ -29,7 +29,7 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
     """
     # loading arguments/parameters from first RPC_method
 
-    device, model, optimizer = initialize_training(0.01, local_dp=True)
+    device, model, optimizer = initialize_training(0.01, local_dp)
 
     train_loader = data
 
@@ -55,8 +55,9 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                            100. * batch_idx / len(train_loader), loss.item()))
 
-        epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-        print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+        if local_dp:
+            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
         model.eval()
 
@@ -79,6 +80,6 @@ def RPC_train_test(data, test_loader, log_interval, epoch, delta):
 
                 print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
                         test_loss, correct, len(test_loader.dataset),
-                         100. * correct / len(test_loader.dataset)))
+                        100. * correct / len(test_loader.dataset)))
 
 

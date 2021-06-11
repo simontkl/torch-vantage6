@@ -44,6 +44,7 @@ def master(client, data):
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'log_interval': 10,
                 'epoch': 2, # default = 1
+                'local_dp': False,
                 'delta': 1e-5
             }
         },
