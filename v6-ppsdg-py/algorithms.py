@@ -7,6 +7,8 @@ Description: This module contains the RPC_methods including the training and fed
 import torch
 import torch.nn.functional as F
 from opacus import PrivacyEngine
+import torch.optim as optim
+
 
 
 # Own modules
@@ -32,13 +34,12 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
         round
         delta: The delta value of DP to aim for (default: 1e-5).
     """
-    # loading arguments/parameters from first RPC_method
-
-    # device, model, optimizer = initialize_training(0.01, False)
 
     train_loader = data
 
-    # model.parameters(parameters)
+    new_params = model.parameters(parameters)
+
+    optimizer = optim.SGD(new_params, lr=0.01, momentum=0.5)
 
     model.train()
     for epoch in range(1, epoch + 1):
@@ -60,14 +61,6 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.item()))
-
-        if local_dp:
-            privacy_engine = PrivacyEngine(model, batch_size=64,
-                                            sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                            max_grad_norm=1.0, )
-            privacy_engine.attach(optimizer)
-            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-                #             print("\033[0;{};49m Epsilon {}, best alpha {}".format(epsilon, alpha))
 
         torch.save(model, f"C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
 
@@ -105,3 +98,27 @@ def RPC_get_parameters(data, model):
         return {"params": parameters}
 
 
+"""
+Experimentation
+"""
+# for RPC_get_parameters:
+
+# new_params = OrderedDict()
+#
+# n = len(clients)  # number of clients
+#
+# for client_model in clients:
+#   sd = client_model.state_dict()  # get current parameters of one client
+#   for k, v in sd.items():
+#     new_params[k] = new_params.get(k, 0) + v / n
+
+# cannot access client like that. model.parameters(), but maybe:
+
+    # new_params = OrderedDict()
+    #
+    # n = len(organizations)
+    #
+    # for model in model.parameters():
+    #     sd = model.state_dict()
+    #     for k, v in sd.items():
+    #         new_params[k] = new_params.get(k, 0) + v / n

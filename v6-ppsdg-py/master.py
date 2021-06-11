@@ -41,13 +41,6 @@ def master(client, data):
     """
     Currently the only way to (de-)activate local_dp is by (un-)commenting the next 4 lines
     """
-    #
-    # privacy_engine = PrivacyEngine(model, batch_size=64,
-    #                                     sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-    #                                     max_grad_norm=1.0, )
-    # privacy_engine.attach(optimizer)
-
-
 
     # Train without federated averaging
     info('Train_test')
@@ -118,10 +111,6 @@ def master(client, data):
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
-    privacy_engine = PrivacyEngine(model, batch_size=64,
-                                   sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                   max_grad_norm=1.0, )
-    privacy_engine.attach(optimizer)
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
@@ -136,7 +125,7 @@ def master(client, data):
                 'device': device,
                 'log_interval': 10,
                 'local_dp': False,
-                'epoch': 20,
+                'epoch': 5,
                 'round': 1,
                 'delta': 1e-5,
             }
