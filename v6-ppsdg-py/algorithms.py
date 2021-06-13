@@ -18,7 +18,7 @@ import torch.optim as optim
 # from torch import nn
 
 
-def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_interval, local_dp, epoch, round, delta):
+def RPC_train(data, model, parameters, test_loader, optimizer, device, log_interval, local_dp, return_params, epoch, round, delta):
     """
     Training the model on all batches.
     Args:
@@ -67,8 +67,9 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
                         epoch, batch_idx * len(data), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.item()))
 
-    for parameters in model.parameters():
-        return {'params': parameters}
+    if return_params:
+        for parameters in model.parameters():
+            return {'params': parameters}
 
         # torch.save(model, f"C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
 
