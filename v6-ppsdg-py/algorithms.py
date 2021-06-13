@@ -37,12 +37,12 @@ def RPC_train_test(data, model, parameters, test_loader, optimizer, device, log_
 
     train_loader = data
 
-    new_params = parameters
+
 
     # for parameters in new_params:
     #     print(parameters)
 
-    optimizer = optim.SGD(new_params, lr=0.01, momentum=0.5)
+    optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
 
 
 

@@ -11,7 +11,7 @@ import torch.optim as optim
 from .v6simplemodel import Net
 from vantage6.tools.util import info
 from opacus import PrivacyEngine
-import collections
+from collections import OrderedDict
 
 def master(client, data):
     """Master algorithm.
@@ -64,19 +64,21 @@ def master(client, data):
 
     results = client.get_results(task_id=task.get("id"))
 
-    # trained_model = torch.load(
-    #     'C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth')
+    # averag_param = results.state_dict()
+    #
+    global_sum = 0
+    global_count = 0
 
-    # info('Gather params')
-    # task = client.create_new_task(
-    #     input_={
-    #         'method': 'get_parameters',
-    #         'kwargs': {
-    #             'model': results
-    #         }
-    #     },
-    #     organization_ids=ids
-    # )
+    for output in results:
+        global_sum += output["params"]
+        global_count += len(global_sum)
+
+    averaged_parameters = global_sum/global_count
+
+    # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
+    # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
+    averaged_parameters = [averaged_parameters.clone().detach()]
+
 
     '''
     Now we need to wait until all organizations(/nodes) finished
@@ -97,21 +99,6 @@ def master(client, data):
     # info("Obtaining results")
     # results = client.get_results(task_id=task.get("id"))
 
-    # averaging of returned parameters:
-    # global_sum = 0
-    # global_count = 0
-    #
-    # for output in results:
-    #     global_sum += output["params"]
-    #     global_count += len(global_sum)
-    #
-    # # averaged_parameters = collections.OrderedDict()
-    # #
-    # # for parameters in results:
-    # #     averaged_parameters.
-    # averaged_parameters = [global_sum/global_count]
-
-    # new_params = {'averaged_parameters': averaged_parameters}
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
 
@@ -122,7 +109,7 @@ def master(client, data):
             'method': 'train_test',
             'kwargs': {
                 'model': model,
-                'parameters': results,
+                'parameters': averaged_parameters,
                 'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
                                           "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
                 'optimizer': optimizer,
@@ -136,5 +123,6 @@ def master(client, data):
         },
         organization_ids=ids
     )
+
 
 
