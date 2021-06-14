@@ -32,13 +32,13 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
         delta: The delta value of DP to aim for (default: 1e-5).
     """
 
-    train_loader = data
+    train_data = data
 
     device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     model.train()
     for epoch in range(1, epoch + 1):
-        for batch_idx, (data, target) in enumerate(train_loader):
+        for batch_idx, (data, target) in enumerate(train_data):
             # Send the data and target to the device (cpu/gpu) the model is at
             data, target = data.to(device), target.to(device)
             # Clear gradient buffers
@@ -54,8 +54,8 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
 
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        epoch, batch_idx * len(data), len(train_loader.dataset),
-                        100. * batch_idx / len(train_loader), loss.item()))
+                        epoch, batch_idx * len(data), len(train_data.dataset),
+                        100. * batch_idx / len(train_data), loss.item()))
         if local_dp:
             epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
             print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
