@@ -12,13 +12,10 @@ import torch.optim as optim
 
 
 # Own modules
+from .central import initialize_training
 
-
-# basic training and testing of the model
-# from torch import nn
-
-
-def RPC_train(data, model, parameters, test_loader, optimizer, device, log_interval, local_dp, return_params, epoch, round, delta):
+# training of the model
+def RPC_train(data, model, parameters, device, log_interval, local_dp, return_params, epoch, round, delta):
     """
     Training the model on all batches.
     Args:
@@ -37,14 +34,7 @@ def RPC_train(data, model, parameters, test_loader, optimizer, device, log_inter
 
     train_loader = data
 
-
-
-    # for parameters in new_params:
-    #     print(parameters)
-
-    optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
-
-
+    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     model.train()
     for epoch in range(1, epoch + 1):
@@ -66,12 +56,15 @@ def RPC_train(data, model, parameters, test_loader, optimizer, device, log_inter
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.item()))
+        if local_dp:
+            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
     if return_params:
         for parameters in model.parameters():
             return {'params': parameters}
 
-        # torch.save(model, f"C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+
 
         # model.eval()
         #

@@ -28,18 +28,12 @@ def master(client, data):
     organizations = client.get_organizations_in_my_collaboration()
     ids = [organization.get("id") for organization in organizations]
 
-    # Determine the device to train on
+    # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    # Initialize model and send parameters of server to all workers
+    # # Initialize model and send parameters of server to all workers
     model = Net().to(device)
-
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
-
-    """
-    Currently the only way to (de-)activate local_dp is by (un-)commenting the next 4 lines
-    """
 
     # Train without federated averaging
     info('Train_test')
@@ -49,59 +43,49 @@ def master(client, data):
             'kwargs': {
                 'model': model,
                 'parameters': model.parameters(),
-                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
-                                          "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-                'optimizer': optimizer,
                 'device': device,
                 'log_interval': 10,
                 'local_dp': True, # throws error if epoch 2+ or round 2+
                 'return_params': True,
-                'epoch': 1,
+                'epoch': 2,
                 'round': 1,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
     )
 
-        '''
+    '''
     Now we need to wait until all organizations(/nodes) finished
     their partial. We do this by polling the server for results. It is
     also possible to subscribe to a websocket channel to get status
     updates.
     '''
 
-    # info("Waiting for results")
-    # task_id = task.get("id")
-    # task = client.get_task(task_id)
-    # while not task.get("complete"):
-    #     task = client.get_task(task_id)
-    #     info("Waiting for results")
-    #     time.sleep(1)
+    info("Waiting for parameters")
+    task_id = task.get("id")
+    task = client.get_task(task_id)
+    while not task.get("complete"):
+        task = client.get_task(task_id)
+        info("Waiting for results")
+        time.sleep(1)
 
     # # Once we now the partials are complete, we can collect them.
-    info("Obtaining results")
+    info("Obtaining parameters from all nodes")
     
     results = client.get_results(task_id=task.get("id"))
 
-    # averag_param = results.state_dict()
-    #
     global_sum = 0
     global_count = 0
 
     for output in results:
         global_sum += output["params"]
-        global_count += len(global_sum)
+        global_count = len(global_sum)
 
     averaged_parameters = global_sum/global_count
 
     # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
     # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
     averaged_parameters = [averaged_parameters.clone().detach()]
-
-
-
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
-
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
@@ -110,14 +94,11 @@ def master(client, data):
             'kwargs': {
                 'model': model,
                 'parameters': averaged_parameters,
-                'test_loader': torch.load("C:\\Users\\simon\\PycharmProjects"
-                                          "\\torch-vantage6\\v6-ppsdg-py\\local\\MNIST\\processed\\testing.pt"),
-                'optimizer': optimizer,
                 'device': device,
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 1,
+                'epoch': 2,
                 'round': 1,
                 'delta': 1e-5,
             }
