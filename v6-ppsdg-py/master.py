@@ -63,6 +63,24 @@ def master(client, data):
         },        organization_ids=ids
     )
 
+        '''
+    Now we need to wait until all organizations(/nodes) finished
+    their partial. We do this by polling the server for results. It is
+    also possible to subscribe to a websocket channel to get status
+    updates.
+    '''
+
+    # info("Waiting for results")
+    # task_id = task.get("id")
+    # task = client.get_task(task_id)
+    # while not task.get("complete"):
+    #     task = client.get_task(task_id)
+    #     info("Waiting for results")
+    #     time.sleep(1)
+
+    # # Once we now the partials are complete, we can collect them.
+    info("Obtaining results")
+    
     results = client.get_results(task_id=task.get("id"))
 
     # averag_param = results.state_dict()
@@ -80,25 +98,6 @@ def master(client, data):
     # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
     averaged_parameters = [averaged_parameters.clone().detach()]
 
-
-    '''
-    Now we need to wait until all organizations(/nodes) finished
-    their partial. We do this by polling the server for results. It is
-    also possible to subscribe to a websocket channel to get status
-    updates.
-    '''
-
-    # info("Waiting for results")
-    # task_id = task.get("id")
-    # task = client.get_task(task_id)
-    # while not task.get("complete"):
-    #     task = client.get_task(task_id)
-    #     info("Waiting for results")
-    #     time.sleep(1)
-
-    # # Once we now the partials are complete, we can collect them.
-    # info("Obtaining results")
-    # results = client.get_results(task_id=task.get("id"))
 
 
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
