@@ -28,7 +28,11 @@ def master(client, data):
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
+    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else
+
+    # clear cuda memory
+    torch.cuda.empty_cache()
+    # torch.cuda.clear_memory_allocated()
 
     # # Initialize model and send parameters of server to all workers
     model = Net().to(device)
@@ -51,8 +55,6 @@ def master(client, data):
             }
         },        organization_ids=ids
     )
-
-
 
     info('Testing first round')
     task1 = client.create_new_task(
@@ -103,6 +105,9 @@ def master(client, data):
     # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
     averaged_parameters = [averaged_parameters.clone().detach()]
 
+    torch.cuda.empty_cache()
+    # torch.cuda.clear_memory_allocated()
+
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
@@ -112,7 +117,7 @@ def master(client, data):
                 'model': model,
                 'device': device,
                 'log_interval': 10,
-                'local_dp': False,
+                'local_dp': False, # because they're already private now, averaged
                 'return_params': False,
                 'epoch': 1,
                 # 'round': 1,

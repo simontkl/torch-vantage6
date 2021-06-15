@@ -33,8 +33,8 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
     optimizer = optim.SGD(parameters, lr=0.01)
 
     if local_dp:
-        privacy_engine = PrivacyEngine(model, batch_size=1,
-                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+        privacy_engine = PrivacyEngine(model, batch_size=64,
+                                        sample_size=5000, alphas=range(2, 32), noise_multiplier=1.3,
                                         max_grad_norm=1.0, )
         privacy_engine.attach(optimizer)
 
@@ -60,9 +60,9 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(train_data.dataset),
                         100. * batch_idx / len(train_data), loss.item()))
-            # if local_dp:
-            #     epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-            #     print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+        if local_dp:
+            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
 
 
