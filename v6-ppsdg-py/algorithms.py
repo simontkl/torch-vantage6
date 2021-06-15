@@ -6,35 +6,29 @@ Description: This module contains the RPC_methods including the training and fed
 
 import torch
 import torch.nn.functional as F
-from opacus import PrivacyEngine
-import torch.optim as optim
-
-
 
 # Own modules
 from .central import initialize_training
 
+
 # training of the model
-def RPC_train(data, model, parameters, device, log_interval, local_dp, return_params, epoch, round, delta):
+def RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta):
     """
     Training the model on all batches.
     Args:
         epoch: The number of the epoch the training is in.
         model: use model from initialize_training, if it doesn't work try all separately and change model params in fed_avg
-        parameters:
-        test_loader: test dataset which is separate
         optimizer:
         device:
         log_interval: The amount of rounds before logging intermediate loss.
         local_dp: Training with local DP?
         epoch
-        round
+        return_params
+
         delta: The delta value of DP to aim for (default: 1e-5).
     """
 
     train_data = data
-
-    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     model.train()
     for epoch in range(1, epoch + 1):
@@ -60,69 +54,57 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
             epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
             print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
-    if return_params:
-        for parameters in model.parameters():
-            return {'params': parameters}
 
 
-
-        # model.eval()
-        #
-        # test_loss = 0
-        # correct = 0
-        # with torch.no_grad():
-        #     for data, target in test_loader:
-        #         # Send the local and target to the device (cpu/gpu) the model is at
-        #         data, target = data.to(device), target.to(device)
-        #         # Run the model on the local
-        #         output = model(data)
-        #         # Calculate the loss
-        #         test_loss += F.nll_loss(output, target, reduction='sum').item()
-        #         # Check whether prediction was correct
-        #         pred = output.argmax(dim=1, keepdim=True)
-        #         correct += pred.eq(target.view_as(pred)).sum().item()
-        #
-        #     test_loss /= len(test_loader.dataset)
-        #
-        #     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        #             test_loss, correct, len(test_loader.dataset),
-        #             100. * correct / len(test_loader.dataset)))
-
-
-
-# Gathering of parameters for federated averaging
-# def RPC_get_parameters(data, model):
-#     """
-#     Get parameters from nodes
-#     """
 #
-#     # with torch.no_grad():
-#     for parameters in model:
-#         # store parameters in dict
-#         return {"params": parameters}
+def RPC_test(data, model, device):
+
+    test_loader = data #[:0.2]
+
+    model.eval()
+
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            # Send the local and target to the device (cpu/gpu) the model is at
+            data, target = data.to(device), target.to(device)
+            # Run the model on the local
+            output = model(data)
+            # Calculate the loss
+            test_loss += F.nll_loss(output, target, reduction='sum').item()
+            # Check whether prediction was correct
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+    test_loss /= len(test_loader.dataset)
+
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+            test_loss, correct, len(test_loader.dataset),
+            100. * correct / len(test_loader.dataset)))
 
 
-"""
-Experimentation
-"""
-# for RPC_get_parameters:
+# train and test together
+def RPC_train_test(data, parameters, log_interval, local_dp, return_params, epoch, round, delta):
+    """
+    :param data:
+    :param parameters:
+    :param log_interval:
+    :param local_dp:
+    :param return_params:
+    :param epoch:
+    :param round:
+    :param delta:
+    :return:
+    """
 
-# new_params = OrderedDict()
-#
-# n = len(clients)  # number of clients
-#
-# for client_model in clients:
-#   sd = client_model.state_dict()  # get current parameters of one client
-#   for k, v in sd.items():
-#     new_params[k] = new_params.get(k, 0) + v / n
+    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
-# cannot access client like that. model.parameters(), but maybe:
+    for round in range(1, round + 1):
+        for epoch in range(1, epoch + 1):
+            RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta)
+            RPC_test(data, model, device)
 
-    # new_params = OrderedDict()
-    #
-    # n = len(organizations)
-    #
-    # for model in model.parameters():
-    #     sd = model.state_dict()
-    #     for k, v in sd.items():
-    #         new_params[k] = new_params.get(k, 0) + v / n
+        if return_params:
+            for parameters in model.parameters():
+                return {'params': parameters}

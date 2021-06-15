@@ -27,12 +27,10 @@ def initialize_training(parameters, learning_rate, local_dp):
     # Determine the device to train on
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    # print("\033[0;{};49m Rank {} is training on {}".format(device))
 
     # Initialize model and send parameters of server to all workers
     model = Net().to(device)
 
-    # if local_dp == True:
     # initializing optimizer and scheduler
     optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.5)
 
@@ -41,7 +39,6 @@ def initialize_training(parameters, learning_rate, local_dp):
                                         sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
                                         max_grad_norm=1.0, )
         privacy_engine.attach(optimizer)
-
 
     # returns device, model, optimizer which will be needed in train and test
     return device, optimizer, model
