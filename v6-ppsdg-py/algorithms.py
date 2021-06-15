@@ -58,10 +58,10 @@ def RPC_train(data, model, optimizer, device, log_interval, local_dp, return_par
         for parameters in model.parameters():
             return {'params': parameters}
 
-
+#
 def RPC_test(data, model, device):
 
-    test_loader = data[:0.2]
+    test_loader = data #[:0.2]
 
     model.eval()
 
