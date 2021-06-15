@@ -36,11 +36,9 @@ def master(client, data):
     info('Train_test')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
-                'model': model,
                 'parameters': model.parameters(),
-                'device': device,
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
                 'return_params': True,
@@ -87,11 +85,9 @@ def master(client, data):
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
-                'model': model,
                 'parameters': averaged_parameters,
-                'device': device,
                 'log_interval': 10,
                 'local_dp': False,
                 'return_params': True,

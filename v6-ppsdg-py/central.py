@@ -27,7 +27,6 @@ def initialize_training(parameters, learning_rate, local_dp):
     # Determine the device to train on
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    # print("\033[0;{};49m Rank {} is training on {}".format(device))
 
     # Initialize model and send parameters of server to all workers
     model = Net().to(device)
