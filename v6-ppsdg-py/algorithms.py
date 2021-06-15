@@ -55,9 +55,9 @@ def RPC_train_test(data, test_loader, log_interval, epoch, local_dp, delta):
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                            100. * batch_idx / len(train_loader), loss.item()))
 
-        if local_dp:
-            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+            if local_dp:
+                epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+                print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
         model.eval()
 
