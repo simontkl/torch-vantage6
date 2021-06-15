@@ -12,7 +12,7 @@ from .central import initialize_training
 
 
 # training of the model
-def RPC_train(data, model, optimizer, device, log_interval, local_dp, return_params, epoch, delta):
+def RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta):
     """
     Training the model on all batches.
     Args:
@@ -54,9 +54,7 @@ def RPC_train(data, model, optimizer, device, log_interval, local_dp, return_par
             epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
             print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
-    if return_params:
-        for parameters in model.parameters():
-            return {'params': parameters}
+
 
 #
 def RPC_test(data, model, device):
@@ -104,5 +102,9 @@ def RPC_train_test(data, parameters, log_interval, local_dp, return_params, epoc
 
     for round in range(1, round + 1):
         for epoch in range(1, epoch + 1):
-            RPC_train(data, model, device, log_interval, local_dp, return_params, epoch, round, delta)
+            RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta)
             RPC_test(data, model, device)
+
+        if return_params:
+            for parameters in model.parameters():
+                return {'params': parameters}

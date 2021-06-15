@@ -42,8 +42,8 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': False, # throws error if epoch 2+ or round 2+
                 'return_params': True,
-                'epoch': 1,
-                'round': 1,
+                'epoch': 3,
+                'round': 4,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
@@ -69,18 +69,25 @@ def master(client, data):
     
     results = client.get_results(task_id=task.get("id"))
 
+    for parameters in results:
+        print(parameters)
+
     global_sum = 0
-    global_count = 0
 
     for output in results:
         global_sum += output["params"]
-        global_count = len(global_sum)
 
-    averaged_parameters = global_sum/global_count # same as len(organizations)
+    averaged_parameters = global_sum/len(organizations)
+
+    info("Averaged parameters")
+    for parameters in averaged_parameters:
+        print(parameters)
 
     # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
     # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
     averaged_parameters = [averaged_parameters.clone().detach()]
+
+
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
