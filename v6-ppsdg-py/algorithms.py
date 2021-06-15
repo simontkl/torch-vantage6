@@ -105,6 +105,6 @@ def RPC_train_test(data, parameters, log_interval, local_dp, return_params, epoc
             RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta)
             RPC_test(data, model, device)
 
-        if return_params:
-            for parameters in model.parameters():
-                return {'params': parameters}
+            if return_params:
+                for parameters in model.parameters():
+                    return {'params': parameters}
