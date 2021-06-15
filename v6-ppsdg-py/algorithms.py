@@ -6,13 +6,10 @@ Description: This module contains the RPC_methods including the training and fed
 
 import torch
 import torch.nn.functional as F
-from opacus import PrivacyEngine
-import torch.optim as optim
-
-
 
 # Own modules
 from .central import initialize_training
+
 
 # training of the model
 def RPC_train(data, model, parameters, device, log_interval, local_dp, return_params, epoch, round, delta):
@@ -31,10 +28,9 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
         round
         delta: The delta value of DP to aim for (default: 1e-5).
     """
+    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     train_data = data
-
-    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     model.train()
     for epoch in range(1, epoch + 1):
@@ -65,7 +61,7 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
             return {'params': parameters}
 
 
-
+# def RPC_test
         # model.eval()
         #
         # test_loss = 0
@@ -87,42 +83,3 @@ def RPC_train(data, model, parameters, device, log_interval, local_dp, return_pa
         #     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         #             test_loss, correct, len(test_loader.dataset),
         #             100. * correct / len(test_loader.dataset)))
-
-
-
-# Gathering of parameters for federated averaging
-# def RPC_get_parameters(data, model):
-#     """
-#     Get parameters from nodes
-#     """
-#
-#     # with torch.no_grad():
-#     for parameters in model:
-#         # store parameters in dict
-#         return {"params": parameters}
-
-
-"""
-Experimentation
-"""
-# for RPC_get_parameters:
-
-# new_params = OrderedDict()
-#
-# n = len(clients)  # number of clients
-#
-# for client_model in clients:
-#   sd = client_model.state_dict()  # get current parameters of one client
-#   for k, v in sd.items():
-#     new_params[k] = new_params.get(k, 0) + v / n
-
-# cannot access client like that. model.parameters(), but maybe:
-
-    # new_params = OrderedDict()
-    #
-    # n = len(organizations)
-    #
-    # for model in model.parameters():
-    #     sd = model.state_dict()
-    #     for k, v in sd.items():
-    #         new_params[k] = new_params.get(k, 0) + v / n

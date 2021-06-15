@@ -6,12 +6,9 @@ Description: This module contains the master function which is responsible for t
 
 import time
 import torch
-import torch
-import torch.optim as optim
 from .v6simplemodel import Net
 from vantage6.tools.util import info
-from opacus import PrivacyEngine
-from collections import OrderedDict
+
 
 def master(client, data):
     """Master algorithm.
@@ -45,9 +42,9 @@ def master(client, data):
                 'parameters': model.parameters(),
                 'device': device,
                 'log_interval': 10,
-                'local_dp': True, # throws error if epoch 2+ or round 2+
+                'local_dp': False, # throws error if epoch 2+ or round 2+
                 'return_params': True,
-                'epoch': 2,
+                'epoch': 1,
                 'round': 1,
                 'delta': 1e-5,
             }
@@ -81,7 +78,7 @@ def master(client, data):
         global_sum += output["params"]
         global_count = len(global_sum)
 
-    averaged_parameters = global_sum/global_count
+    averaged_parameters = global_sum/global_count # same as len(organizations)
 
     # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
     # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
@@ -96,9 +93,9 @@ def master(client, data):
                 'parameters': averaged_parameters,
                 'device': device,
                 'log_interval': 10,
-                'local_dp': True,
+                'local_dp': False,
                 'return_params': True,
-                'epoch': 2,
+                'epoch': 1,
                 'round': 1,
                 'delta': 1e-5,
             }
