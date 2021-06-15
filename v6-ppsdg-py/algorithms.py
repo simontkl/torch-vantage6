@@ -31,35 +31,36 @@ def RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, del
     train_data = data
 
     model.train()
-    for epoch in range(1, epoch + 1):
-        for batch_idx, (data, target) in enumerate(train_data):
-            # Send the data and target to the device (cpu/gpu) the model is at
-            data, target = data.to(device), target.to(device)
-            # Clear gradient buffers
-            optimizer.zero_grad()
-            # Run the model on the data
-            output = model(data)
-            # Calculate the loss
-            loss = F.nll_loss(output, target)
-            # Calculate the gradients
-            loss.backward()
-            # Update model
-            optimizer.step()
+    for batch_idx, (data, target) in enumerate(train_data):
+        # Send the data and target to the device (cpu/gpu) the model is at
+        data, target = data.to(device), target.to(device)
+        # Clear gradient buffers
+        optimizer.zero_grad()
+        # Run the model on the data
+        output = model(data)
+        # Calculate the loss
+        loss = F.nll_loss(output, target)
+        # Calculate the gradients
+        loss.backward()
+        # Update model
+        optimizer.step()
 
-            if batch_idx % log_interval == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        epoch, batch_idx * len(data), len(train_data.dataset),
-                        100. * batch_idx / len(train_data), loss.item()))
+        if batch_idx % log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, batch_idx * len(data), len(train_data.dataset),
+                    100. * batch_idx / len(train_data), loss.item()))
         if local_dp:
-            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+                epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+                print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
+    torch.save(model, f"C:\\Users\\simon\\Desktop\\model_trained.pth")
 
-
-#
-def RPC_test(data, model, device):
+def RPC_test(data, device):
 
     test_loader = data #[:0.2]
+    model_trained = torch.load("C:\\Users\\simon\\Desktop\\model_trained.pth")
+
+    model = model_trained
 
     model.eval()
 
@@ -103,7 +104,7 @@ def RPC_train_test(data, parameters, log_interval, local_dp, return_params, epoc
     for round in range(1, round + 1):
         for epoch in range(1, epoch + 1):
             RPC_train(data, model, optimizer, device, log_interval, local_dp, epoch, delta)
-            RPC_test(data, model, device)
+            RPC_test(data, device)
 
             if return_params:
                 for parameters in model.parameters():
