@@ -30,11 +30,13 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
 
         delta: The delta value of DP to aim for (default: 1e-5).
     """
-    optimizer = optim.SGD(parameters, lr=0.01)
+
+    # device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
+    optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
 
     if local_dp:
         privacy_engine = PrivacyEngine(model, batch_size=64,
-                                        sample_size=5000, alphas=range(2, 32), noise_multiplier=1.3,
+                                        sample_size=100, alphas=range(2, 32), noise_multiplier=1.3,
                                         max_grad_norm=1.0, )
         privacy_engine.attach(optimizer)
 
@@ -64,20 +66,12 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
             epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
             print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
-
-
-    torch.save(model.state_dict(), f"C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+    torch.save(model.state_dict(), f"C:\\Users\\simon\\PycharmProjects"
+                                   f"\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
 
     if return_params:
         for parameters in model.parameters():
             return {'params': parameters}
-
-
-"""
-
-Experimentation, alternative
-
-"""
 
 
 def RPC_test(data, device):
@@ -86,7 +80,8 @@ def RPC_test(data, device):
                              "\\local\\MNIST\\processed\\testing.pt")
 
     model = Net().to(device)
-    model_trained = torch.load(f"C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+    model_trained = torch.load(f"C:\\Users\\simon\\PycharmProjects"
+                               f"\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
 
     model.load_state_dict(model_trained)
 
@@ -110,3 +105,11 @@ def RPC_test(data, device):
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
 
+
+# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+# trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+#                                           shuffle=True, num_workers=2)
+#
+# testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+# testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+#                                           shuffle=False, num_workers=2)
