@@ -46,7 +46,7 @@ def master(client, data):
                 'parameters': model.parameters(),
                 'model': model,
                 'device': device,
-                'log_interval': 100,
+                'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 5,
@@ -85,56 +85,56 @@ def master(client, data):
     # # Once we now the partials are complete, we can collect them.
     info("Obtaining parameters from all nodes")
 
-    # results = client.get_results(task_id=task.get("id"))
-    #
-    # # for parameters in results:
-    # #     print(parameters)
-    #
-    # global_sum = 0
-    #
-    # for output in results:
-    #     global_sum += output["params"]
-    #
-    # averaged_parameters = global_sum/len(organizations)
-    #
-    # # info("Averaged parameters")
-    # # for parameters in averaged_parameters:
-    # #     print(parameters)
-    #
-    # # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
-    # # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
-    # averaged_parameters = [averaged_parameters.clone().detach()]
-    #
-    # torch.cuda.empty_cache()
-    # # torch.cuda.clear_memory_allocated()
-    #
-    # info('Federated averaging w/ averaged_parameters')
-    # task = client.create_new_task(
-    #     input_={
-    #         'method': 'train',
-    #         'kwargs': {
-    #             'parameters': averaged_parameters,
-    #             'model': model,
-    #             'device': device,
-    #             'log_interval': 100,
-    #             'local_dp': False, # because they're already private now, averaged
-    #             'return_params': False,
-    #             'epoch': 1,
-    #             # 'round': 1,
-    #             'delta': 1e-5,
-    #         }
-    #     },
-    #     organization_ids=ids
-    # )
-    #
-    # info('Federated averaging w/ averaged_parameters evaluation')
-    # task = client.create_new_task(
-    #     input_={
-    #         'method': 'test',
-    #         'kwargs': {
-    #             'device': device
-    #         }
-    #     },
-    #     organization_ids=ids
-    # )
-    #
+    results = client.get_results(task_id=task.get("id"))
+
+    # for parameters in results:
+    #     print(parameters)
+
+    global_sum = 0
+
+    for output in results:
+        global_sum += output["params"]
+
+    averaged_parameters = global_sum/len(organizations)
+
+    # info("Averaged parameters")
+    # for parameters in averaged_parameters:
+    #     print(parameters)
+
+    # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
+    # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
+    averaged_parameters = [averaged_parameters.clone().detach()]
+
+    torch.cuda.empty_cache()
+    # torch.cuda.clear_memory_allocated()
+
+    info('Federated averaging w/ averaged_parameters')
+    task = client.create_new_task(
+        input_={
+            'method': 'train',
+            'kwargs': {
+                'parameters': averaged_parameters,
+                'model': model,
+                'device': device,
+                'log_interval': 100,
+                'local_dp': False, # because they're already private now, averaged
+                'return_params': False,
+                'epoch': 1,
+                # 'round': 1,
+                'delta': 1e-5,
+            }
+        },
+        organization_ids=ids
+    )
+
+    info('Federated averaging w/ averaged_parameters evaluation')
+    task = client.create_new_task(
+        input_={
+            'method': 'test',
+            'kwargs': {
+                'device': device
+            }
+        },
+        organization_ids=ids
+    )
+

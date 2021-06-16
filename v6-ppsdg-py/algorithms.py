@@ -36,7 +36,7 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
 
     if local_dp:
         privacy_engine = PrivacyEngine(model, batch_size=64,
-                                        sample_size=100, alphas=range(2, 32), noise_multiplier=1.3,
+                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
                                         max_grad_norm=1.0, )
         privacy_engine.attach(optimizer)
 
