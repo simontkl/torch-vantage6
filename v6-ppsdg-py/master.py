@@ -26,29 +26,42 @@ def master(client, data):
     organizations = client.get_organizations_in_my_collaboration()
     ids = [organization.get("id") for organization in organizations]
 
+    # # Determine the device to train on
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else
+
     # clear cuda memory
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
 
     # # Initialize model and send parameters of server to all workers
-    parameters = Net().parameters()
+    model = Net().to(device)
 
+    model_trained = torch.load(f"C:\\Users\\simon\\PycharmProjects"
+                               f"\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+
+    model.load_state_dict(model_trained)
+
+    # in second round model.parameters() is empty
     # Train without federated averaging
-    info('Train_test')
+    info('Train')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
-                'parameters': parameters,
+                'parameters': model.parameters(),
+                'model': model,
+                'device': device,
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 5,
-                'round': 1,
+                'round': 3,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
     )
+
 
 
     # '''
@@ -68,7 +81,7 @@ def master(client, data):
     #
     # # # Once we now the partials are complete, we can collect them.
     # info("Obtaining parameters from all nodes")
-
+    #
     # results = client.get_results(task_id=task.get("id"))
     #
     # # for parameters in results:
@@ -106,6 +119,17 @@ def master(client, data):
     #             'epoch': 1,
     #             # 'round': 1,
     #             'delta': 1e-5,
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
+    #
+    # info('Federated averaging w/ averaged_parameters evaluation')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'test',
+    #         'kwargs': {
+    #             'device': device
     #         }
     #     },
     #     organization_ids=ids

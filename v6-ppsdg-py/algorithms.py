@@ -14,39 +14,11 @@ from .v6simplemodel import Net
 from .central import initialize_training
 
 
-def initialize_training(parameters, learning_rate, local_dp):
-    """
-    Initializes the model, optimizer and scheduler and shares the parameters
-    with all the workers in the group.
-    This should be sent from server to all nodes.
-    Args:
-        learning_rate: The learning rate for training.
-        local_dp: bool whether to apply local_dp or not.
-    Returns:
-        Returns the device, model, optimizer and scheduler.
-    """
 
-    # Determine the device to train on
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    # Initialize model and send parameters of server to all workers
-    model = Net().to(device)
-
-    # initializing optimizer and scheduler
-    optimizer = optim.SGD(parameters, learning_rate, momentum=0.5)
-    if local_dp:
-        privacy_engine = PrivacyEngine(model, batch_size=64,
-                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                        max_grad_norm=1.0, )
-        privacy_engine.attach(optimizer)
-
-    # returns device, model, optimizer which will be needed in train and test
-    return device, optimizer, model
 
 
 # training of the model
-def train(data, parameters, log_interval, local_dp, epoch, delta, return_params):
+def train(data, model, device, parameters, log_interval, local_dp, epoch, delta, return_params):
     """
     Training the model on all batches.
     Args:
@@ -61,7 +33,6 @@ def train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
 
         delta: The delta value of DP to aim for (default: 1e-5).
     """
-
     device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     train_data = data
@@ -86,6 +57,7 @@ def train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_data.dataset),
                     100. * batch_idx / len(train_data), loss.item()))
+
     if local_dp:
         epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
         print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
@@ -98,9 +70,7 @@ def train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
             return {'params': parameters}
 
 
-def test(parameters, local_dp):
-
-    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
+def test(device):
 
     test_loader = torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py"
                              "\\local\\MNIST\\processed\\testing.pt")
@@ -140,9 +110,9 @@ def test(parameters, local_dp):
 # testloader = torch.utils.data.DataLoader(testset, batch_size=4,
 #                                           shuffle=False, num_workers=2)
 
-def RPC_train_test(data, parameters, log_interval, local_dp, epoch, delta, round, return_params):
+def RPC_train_test(data, model, device, parameters, log_interval, local_dp, epoch, delta, round, return_params):
 
     for round in range(1, round+1):
         for epoch in range(1, epoch+1):
-            train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
-            test(parameters, local_dp)
+            train(data, model, device, parameters, log_interval, local_dp, epoch, delta, return_params)
+            test(device)
