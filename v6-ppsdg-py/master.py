@@ -41,16 +41,16 @@ def master(client, data):
     info('Train')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
-                'parameters': model.parameters(),
                 'model': model,
+                'parameters': model.parameters(),
                 'device': device,
                 'log_interval': 100,
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 5,
-                # 'round': 4,
+                'round': 1,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
