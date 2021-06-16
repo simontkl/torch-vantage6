@@ -26,27 +26,21 @@ def master(client, data):
     organizations = client.get_organizations_in_my_collaboration()
     ids = [organization.get("id") for organization in organizations]
 
-    # # Determine the device to train on
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else
-
     # clear cuda memory
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
 
     # # Initialize model and send parameters of server to all workers
-    model = Net().to(device)
+    parameters = Net().parameters()
 
     # Train without federated averaging
-    info('Train')
+    info('Train_test')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
             'kwargs': {
-                'model': model,
-                'parameters': model.parameters(),
-                'device': device,
-                'log_interval': 100,
+                'parameters': parameters,
+                'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 5,
@@ -56,34 +50,24 @@ def master(client, data):
         },        organization_ids=ids
     )
 
-    info('Testing first round')
-    task2 = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-                'device': device
-            }
-        },
-        organization_ids=ids
-    )
 
-    '''
-    Now we need to wait until all organizations(/nodes) finished
-    their partial. We do this by polling the server for results. It is
-    also possible to subscribe to a websocket channel to get status
-    updates.
-    '''
-
-    info("Waiting for parameters")
-    task_id = task.get("id")
-    task = client.get_task(task_id)
-    while not task.get("complete"):
-        task = client.get_task(task_id)
-        info("Waiting for results")
-        time.sleep(1)
-
-    # # Once we now the partials are complete, we can collect them.
-    info("Obtaining parameters from all nodes")
+    # '''
+    # Now we need to wait until all organizations(/nodes) finished
+    # their partial. We do this by polling the server for results. It is
+    # also possible to subscribe to a websocket channel to get status
+    # updates.
+    # '''
+    #
+    # info("Waiting for parameters")
+    # task_id = task.get("id")
+    # task = client.get_task(task_id)
+    # while not task.get("complete"):
+    #     task = client.get_task(task_id)
+    #     info("Waiting for results")
+    #     time.sleep(1)
+    #
+    # # # Once we now the partials are complete, we can collect them.
+    # info("Obtaining parameters from all nodes")
 
     # results = client.get_results(task_id=task.get("id"))
     #
@@ -122,17 +106,6 @@ def master(client, data):
     #             'epoch': 1,
     #             # 'round': 1,
     #             'delta': 1e-5,
-    #         }
-    #     },
-    #     organization_ids=ids
-    # )
-    #
-    # info('Federated averaging w/ averaged_parameters evaluation')
-    # task = client.create_new_task(
-    #     input_={
-    #         'method': 'test',
-    #         'kwargs': {
-    #             'device': device
     #         }
     #     },
     #     organization_ids=ids

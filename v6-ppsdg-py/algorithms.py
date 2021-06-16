@@ -14,8 +14,39 @@ from .v6simplemodel import Net
 from .central import initialize_training
 
 
+def initialize_training(parameters, learning_rate, local_dp):
+    """
+    Initializes the model, optimizer and scheduler and shares the parameters
+    with all the workers in the group.
+    This should be sent from server to all nodes.
+    Args:
+        learning_rate: The learning rate for training.
+        local_dp: bool whether to apply local_dp or not.
+    Returns:
+        Returns the device, model, optimizer and scheduler.
+    """
+
+    # Determine the device to train on
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    # Initialize model and send parameters of server to all workers
+    model = Net().to(device)
+
+    # initializing optimizer and scheduler
+    optimizer = optim.SGD(parameters, learning_rate, momentum=0.5)
+    if local_dp:
+        privacy_engine = PrivacyEngine(model, batch_size=64,
+                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                        max_grad_norm=1.0, )
+        privacy_engine.attach(optimizer)
+
+    # returns device, model, optimizer which will be needed in train and test
+    return device, optimizer, model
+
+
 # training of the model
-def RPC_train(data, parameters, log_interval, local_dp, epoch, delta, return_params):
+def train(data, parameters, log_interval, local_dp, epoch, delta, return_params):
     """
     Training the model on all batches.
     Args:
@@ -30,16 +61,8 @@ def RPC_train(data, parameters, log_interval, local_dp, epoch, delta, return_par
 
         delta: The delta value of DP to aim for (default: 1e-5).
     """
-    optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
 
-    device, model = initialize_training(optimizer, 0.01, local_dp)
-    # optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
-    #
-    # if local_dp:
-    #     privacy_engine = PrivacyEngine(model, batch_size=64,
-    #                                     sample_size=100, alphas=range(2, 32), noise_multiplier=1.3,
-    #                                     max_grad_norm=1.0, )
-    #     privacy_engine.attach(optimizer)
+    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     train_data = data
 
@@ -75,7 +98,9 @@ def RPC_train(data, parameters, log_interval, local_dp, epoch, delta, return_par
             return {'params': parameters}
 
 
-def RPC_test(data, device):
+def test(parameters, local_dp):
+
+    device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
 
     test_loader = torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py"
                              "\\local\\MNIST\\processed\\testing.pt")
@@ -115,9 +140,9 @@ def RPC_test(data, device):
 # testloader = torch.utils.data.DataLoader(testset, batch_size=4,
 #                                           shuffle=False, num_workers=2)
 
-def RPC_train_test(data, model, device, parameters, log_interval, local_dp, epoch, delta, round, return_params):
+def RPC_train_test(data, parameters, log_interval, local_dp, epoch, delta, round, return_params):
 
     for round in range(1, round+1):
         for epoch in range(1, epoch+1):
-            RPC_train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
-            RPC_test(data, device)
+            train(data, parameters, log_interval, local_dp, epoch, delta, return_params)
+            test(parameters, local_dp)
