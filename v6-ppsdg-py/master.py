@@ -49,8 +49,8 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 5,
-                # 'round': 4,
+                'epoch': 1,
+                'round': 1,
                 'delta': 1e-5,
             }
         },        organization_ids=ids
@@ -116,11 +116,11 @@ def master(client, data):
                 'parameters': averaged_parameters,
                 'model': model,
                 'device': device,
-                'log_interval': 100,
-                'local_dp': False, # because they're already private now, averaged
+                'log_interval': 10,
+                'local_dp': True,
                 'return_params': False,
                 'epoch': 1,
-                # 'round': 1,
+                'round': 1,
                 'delta': 1e-5,
             }
         },

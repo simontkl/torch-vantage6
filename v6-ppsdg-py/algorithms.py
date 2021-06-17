@@ -3,7 +3,7 @@ Author: Simon Tokloth
 Date:
 Description: This module contains the RPC_methods including the training and federated averaging.
 """
-
+import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -15,7 +15,7 @@ from .central import initialize_training
 
 
 # training of the model
-def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, delta, return_params):
+def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, delta, round, return_params):
     """
     Training the model on all batches.
     Args:
@@ -43,31 +43,31 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
     train_data = data
 
     model.train()
-    for epoch in range(1, epoch +1):
-        for batch_idx, (data, target) in enumerate(train_data):
-            # Send the data and target to the device (cpu/gpu) the model is at
-            data, target = data.to(device), target.to(device)
-            # Clear gradient buffers
-            optimizer.zero_grad()
-            # Run the model on the data
-            output = model(data)
-            # Calculate the loss
-            loss = F.nll_loss(output, target)
-            # Calculate the gradients
-            loss.backward()
-            # Update model
-            optimizer.step()
+    for round in range(1, round +1):
+        for epoch in range(1, epoch +1):
+            for batch_idx, (data, target) in enumerate(train_data):
+                # Send the data and target to the device (cpu/gpu) the model is at
+                data, target = data.to(device), target.to(device)
+                # Clear gradient buffers
+                optimizer.zero_grad()
+                # Run the model on the data
+                output = model(data)
+                # Calculate the loss
+                loss = F.nll_loss(output, target)
+                # Calculate the gradients
+                loss.backward()
+                # Update model
+                optimizer.step()
 
-            if batch_idx % log_interval == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                        epoch, batch_idx * len(data), len(train_data.dataset),
-                        100. * batch_idx / len(train_data), loss.item()))
-        if local_dp:
-            epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-            print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+                if batch_idx % log_interval == 0:
+                    print('Round: {}\tTrain Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                            round, epoch, batch_idx * len(data), len(train_data.dataset),
+                            100. * batch_idx / len(train_data), loss.item()))
+            if local_dp:
+                epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+                print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
-    torch.save(model.state_dict(), f"C:\\Users\\simon\\PycharmProjects"
-                                   f"\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+    torch.save(model.state_dict(), "./local/model_trained.pth")
 
     if return_params:
         for parameters in model.parameters():
@@ -76,12 +76,10 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
 
 def RPC_test(data, device):
 
-    test_loader = torch.load("C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py"
-                             "\\local\\MNIST\\processed\\testing.pt")
+    test_loader = torch.load("./local/MNIST/processed/testing.pt")
 
     model = Net().to(device)
-    model_trained = torch.load(f"C:\\Users\\simon\\PycharmProjects"
-                               f"\\torch-vantage6\\v6-ppsdg-py\\local\\model_trained.pth")
+    model_trained = torch.load("./local/model_trained.pth")
 
     model.load_state_dict(model_trained)
 
