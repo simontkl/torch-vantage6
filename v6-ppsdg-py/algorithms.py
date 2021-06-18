@@ -3,7 +3,8 @@ Author: Simon Tokloth
 Date:
 Description: This module contains the RPC_methods including the training and federated averaging.
 """
-import pandas as pd
+
+# Import packages
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -102,6 +103,15 @@ def RPC_test(data, device):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
             100. * correct / len(test_loader.dataset)))
+
+
+
+
+
+
+
+
+
 
 
 # trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)

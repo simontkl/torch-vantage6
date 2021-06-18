@@ -8,7 +8,6 @@ import time
 import torch
 from .v6simplemodel import Net
 from vantage6.tools.util import info
-import torch.optim as optim
 
 
 def master(client, data):
@@ -101,8 +100,11 @@ def master(client, data):
     # for parameters in averaged_parameters:
     #     print(parameters)
 
-    # in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
-    # to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
+    """
+    in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
+    to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
+    """
+  
     averaged_parameters = [averaged_parameters.clone().detach()]
 
     torch.cuda.empty_cache()
