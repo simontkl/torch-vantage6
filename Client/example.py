@@ -2,7 +2,7 @@ from vantage6.tools.mock_client import ClientMockProtocol
 
 
 client = ClientMockProtocol(
-    datasets=["./local/MNIST/processed/training.pt"], #./local/MNIST
+    datasets=["./local/MNIST/processed/training.pt"],
     module="v6-ppsdg-py"
 )
 
