@@ -37,10 +37,10 @@ def master(client, data):
     model = Net().to(device)
 
     # Train without federated averaging
-    info('Train')
+    info('Train_test')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
                 'parameters': model.parameters(),
                 'model': model,
@@ -49,22 +49,13 @@ def master(client, data):
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 1,
-                'round': 1,
+                # 'round': 1,
                 'delta': 1e-5,
+                'if_test': False
             }
         },        organization_ids=ids
     )
 
-    info('Testing first round')
-    task2 = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-                'device': device
-            }
-        },
-        organization_ids=ids
-    )
 
     '''
     Now we need to wait until all organizations(/nodes) finished
@@ -90,12 +81,14 @@ def master(client, data):
     #     print(parameters)
 
     global_sum = 0
+    global_count = 0
 
     for output in results:
+        # print(len(output))
         global_sum += output["params"]
+        global_count += len(global_sum)
 
-    averaged_parameters = global_sum/len(organizations)
-
+    averaged_parameters = global_sum / global_count
 
     # info("Averaged parameters")
     # for parameters in averaged_parameters:
@@ -114,31 +107,25 @@ def master(client, data):
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
                 'parameters': averaged_parameters,
-                'model': model,
+                'model': output['model'],
                 'device': device,
                 'log_interval': 10,
-                'local_dp': True,
-                'return_params': False,
+                'local_dp': False,
+                'return_params': True,
                 'epoch': 1,
-                'round': 1,
+                # 'round': 1,
                 'delta': 1e-5,
+                'if_test': True
             }
         },
         organization_ids=ids
     )
 
-    info('Federated averaging w/ averaged_parameters evaluation')
-    task = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-                'device': device
-            }
-        },
-        organization_ids=ids
-    )
+    results = client.get_results(task_id=task.get("id"))
+    for output in results:
+        acc = output["test_accuracy"]
+    return acc
 
-    return output['model']
