@@ -71,8 +71,8 @@ def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, de
     torch.save(model.state_dict(), "./local/model_trained.pth")
 
     if return_params:
-        for parameters in model.parameters():
-            return {'params': parameters}
+        for parameters in model: #.parameters()
+            return {'params': parameters, 'model': model}
 
 
 def RPC_test(data, device):

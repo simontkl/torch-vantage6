@@ -27,7 +27,7 @@ def master(client, data):
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else
+    device = torch.device("cuda" if use_cuda else"cpu")
 
     # clear cuda memory
     torch.cuda.empty_cache()
@@ -96,6 +96,7 @@ def master(client, data):
 
     averaged_parameters = global_sum/len(organizations)
 
+
     # info("Averaged parameters")
     # for parameters in averaged_parameters:
     #     print(parameters)
@@ -140,3 +141,4 @@ def master(client, data):
         organization_ids=ids
     )
 
+    return output['model']
