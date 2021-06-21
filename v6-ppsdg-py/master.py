@@ -8,6 +8,8 @@ import time
 import torch
 from .v6simplemodel import Net
 from vantage6.tools.util import info
+import data as dat
+from torchvision import datasets, transforms
 
 
 def master(client, data):
@@ -18,12 +20,37 @@ def master(client, data):
     # Info messages can help you when an algorithm crashes. These info
     # messages are stored in a log file which is send to the server when
     # either a task finished or crashes.
+
     info('Collecting participating organizations')
 
     # Collect all organization that participate in this collaboration.
     # These organizations will receive the task to compute the partial.
     organizations = client.get_organizations_in_my_collaboration()
     ids = [organization.get("id") for organization in organizations]
+
+    # Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    train_set_pre = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    test_set_pre = datasets.MNIST('./data', train=False, transform=transform)
+    # Merge train set and test set as the whole MNIST dataset (70000 samples)
+    dataset_mnist_all = dat.MergeDatasets([train_set_pre, test_set_pre])
+
+    dataset_shuffled = dat.ShuffleDataset(dataset_mnist_all)
+    torch.save(dataset_shuffled, './local/mnist_shuffled.pt')
+
+    train_test_split = [0.8, 0.2]
+
+    # dataset_shuffled = data
+
+    # We need to use partition 2 for train_set and partition 1 for test_set because EqualPartitionEachClass start its encode from worker node 1
+    train_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
+        dataset_shuffled, train_test_split, 2)
+    test_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
+        dataset_shuffled, train_test_split, 1)
+
+    n_nodes = len(organizations)
+
+    df_dist_fullyIID_cnt, df_dist_fullyIID_indexes = dat.data_dist_FullyIID_each(train_set, n_nodes)
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
@@ -37,41 +64,26 @@ def master(client, data):
     model = Net().to(device)
 
     # Train without federated averaging
-    info('Train')
+    info('Train_test')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
+                'dat': train_set,
+                'dat2': test_set,
                 'parameters': model.parameters(),
                 'model': model,
                 'device': device,
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 1,
-                'round': 1,
+                'epoch': 2,
+                # 'round': 1,
                 'delta': 1e-5,
+                'if_test': False
             }
-        },        organization_ids=ids
+        }, organization_ids=ids
     )
-
-    info('Testing first round')
-    task2 = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-                'device': device
-            }
-        },
-        organization_ids=ids
-    )
-
-    '''
-    Now we need to wait until all organizations(/nodes) finished
-    their partial. We do this by polling the server for results. It is
-    also possible to subscribe to a websocket channel to get status
-    updates.
-    '''
 
     info("Waiting for parameters")
     task_id = task.get("id")
@@ -84,18 +96,20 @@ def master(client, data):
     # # Once we now the partials are complete, we can collect them.
     info("Obtaining parameters from all nodes")
 
-    results = client.get_results(task_id=task.get("id"))
+    results_train = client.get_results(task_id=task.get("id"))
+
+    global_sum = 0
+    global_count = 0
+
+    for output in results_train:
+        # print(len(output))
+        global_sum += output["params"]
+        global_count += len(global_sum)
 
     # for parameters in results:
     #     print(parameters)
 
-    global_sum = 0
-
-    for output in results:
-        global_sum += output["params"]
-
-    averaged_parameters = global_sum/len(organizations)
-
+    averaged_parameters = global_sum / global_count
 
     # info("Averaged parameters")
     # for parameters in averaged_parameters:
@@ -105,40 +119,55 @@ def master(client, data):
     in order to not have the optimizer see the new parameters as a non-leaf tensor, .clone().detach() needs
     to be applied in order to turn turn "grad_fn=<DivBackward0>" into "grad_fn=True"
     """
-  
+
     averaged_parameters = [averaged_parameters.clone().detach()]
 
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
 
+    # info('Federated averaging w/ averaged_parameters')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'train_test',
+    #         'kwargs': {
+    #             'parameters': averaged_parameters,
+    #             'model': output['model'],
+    #             'device': device,
+    #             'log_interval': 10,
+    #             'local_dp': True,
+    #             'return_params': True,
+    #             'epoch': 5,
+    #             # 'round': 1,
+    #             'delta': 1e-5,
+    #             'if_test': False
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
+
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
         input_={
-            'method': 'train',
+            'method': 'train_test',
             'kwargs': {
+                'dat': train_set,
+                'dat2': test_set,
                 'parameters': averaged_parameters,
-                'model': model,
+                'model': output['model'],
                 'device': device,
                 'log_interval': 10,
-                'local_dp': True,
-                'return_params': False,
+                'local_dp': False,
+                'return_params': True,
                 'epoch': 1,
-                'round': 1,
+                # 'round': 1,
                 'delta': 1e-5,
+                'if_test': True
             }
         },
         organization_ids=ids
     )
 
-    info('Federated averaging w/ averaged_parameters evaluation')
-    task = client.create_new_task(
-        input_={
-            'method': 'test',
-            'kwargs': {
-                'device': device
-            }
-        },
-        organization_ids=ids
-    )
-
-    return output['model']
+    results = client.get_results(task_id=task.get("id"))
+    for output in results:
+        acc = output["test_accuracy"]
+    return acc

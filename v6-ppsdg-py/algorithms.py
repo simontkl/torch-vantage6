@@ -10,101 +10,111 @@ import torch.nn.functional as F
 import torch.optim as optim
 from opacus import PrivacyEngine
 from .v6simplemodel import Net
+from torchvision import datasets, transforms
 
 # Own modules
 from .central import initialize_training
-
+import data as dat
 
 # training of the model
-def RPC_train(data, model, device, parameters, log_interval, local_dp, epoch, delta, round, return_params):
+def RPC_train_test(data, dat, dat2, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test):
     """
-    Training the model on all batches.
-    Args:
-        epoch: The number of the epoch the training is in.
-        model: use model from initialize_training, if it doesn't work try all separately and change model params in fed_avg
-        optimizer:
-        device:
-        log_interval: The amount of rounds before logging intermediate loss.
-        local_dp: Training with local DP?
-        epoch
-        return_params
-
-        delta: The delta value of DP to aim for (default: 1e-5).
+    :param data:
+    :param model:
+    :param parameters:
+    :param device:
+    :param log_interval:
+    :param local_dp:
+    :param return_params:
+    :param epoch:
+    :param delta:
+    :param if_test:
+    :return:
     """
+    train_loader = torch.utils.data.DataLoader(dat, batch_size=64, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(dat2, batch_size=64, shuffle=True)
 
-    # device, optimizer, model = initialize_training(parameters, 0.01, local_dp)
-    optimizer = optim.SGD(parameters, lr=0.01, momentum=0.5)
+    # if input is train.pt
+    # train_loader = data
 
-    if local_dp:
-        privacy_engine = PrivacyEngine(model, batch_size=64,
-                                        sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                        max_grad_norm=1.0, )
-        privacy_engine.attach(optimizer)
+    test_accuracy = 0
+    if if_test:
+        model.eval()
 
-    train_data = data
-
-    model.train()
-    for round in range(1, round +1):
-        for epoch in range(1, epoch +1):
-            for batch_idx, (data, target) in enumerate(train_data):
-                # Send the data and target to the device (cpu/gpu) the model is at
+        test_loss = 0
+        correct = 0
+        with torch.no_grad():
+            for data, target in test_loader:
+                # Send the local and target to the device (cpu/gpu) the model is at
                 data, target = data.to(device), target.to(device)
-                # Clear gradient buffers
-                optimizer.zero_grad()
-                # Run the model on the data
+                # Run the model on the local
+                batch_size = data.shape[0]
+                # print(batch_size)
+                data = data.reshape(batch_size, 28, 28)
+                data = data.unsqueeze(1)
                 output = model(data)
                 # Calculate the loss
+                test_loss += F.nll_loss(output, target, reduction='sum').item()
+                # Check whether prediction was correct
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(target.view_as(pred)).sum().item()
+
+            test_loss /= len(test_loader.dataset)
+
+            print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+                test_loss, correct, len(test_loader.dataset),
+                100. * correct / len(test_loader.dataset)))
+            test_accuracy = 100. * correct / len(test_loader.dataset)
+
+    else:
+        learning_rate = 0.01
+
+        # if local_dp == True:
+        # initializing optimizer and scheduler
+        optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.5)
+
+        if local_dp:
+            privacy_engine = PrivacyEngine(model, batch_size=64,
+                                           sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                           max_grad_norm=1.0, )
+            privacy_engine.attach(optimizer)
+
+        model.train()
+        for epoch in range(1, epoch + 1):
+            for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(device), target.to(device)
+                optimizer.zero_grad()
+
+                batch_size = data.shape[0]
+                # print(batch_size)
+                data = data.reshape(batch_size, 28, 28)
+                data = data.unsqueeze(1)
+                # print(data.shape)
+                # print(data.type())
+                # print(target.type())
+                output = model(data)
+
                 loss = F.nll_loss(output, target)
-                # Calculate the gradients
                 loss.backward()
-                # Update model
                 optimizer.step()
 
                 if batch_idx % log_interval == 0:
-                    print('Round: {}\tTrain Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                            round, epoch, batch_idx * len(data), len(train_data.dataset),
-                            100. * batch_idx / len(train_data), loss.item()))
+                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                        epoch, batch_idx * len(data), len(train_loader.dataset),
+                        100. * batch_idx / len(train_loader), loss.item()))
+
             if local_dp:
                 epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
                 print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
-    torch.save(model.state_dict(), "./local/model_trained.pth")
+        # detach privacy engine from optimizer. Multiple attachments lead to error
+        privacy_engine.detach()
 
     if return_params:
-        for parameters in model: #.parameters()
-            return {'params': parameters, 'model': model}
-
-
-def RPC_test(data, device):
-
-    test_loader = torch.load("./local/MNIST/processed/testing.pt")
-
-    model = Net().to(device)
-    model_trained = torch.load("./local/model_trained.pth")
-
-    model.load_state_dict(model_trained)
-
-    test_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for data, target in test_loader:
-            # Send the local and target to the device (cpu/gpu) the model is at
-            data, target = data.to(device), target.to(device)
-            # Run the model on the local
-            output = model(data)
-            # Calculate the loss
-            test_loss += F.nll_loss(output, target, reduction='sum').item()
-            # Check whether prediction was correct
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
-
-    test_loss /= len(test_loader.dataset)
-
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset),
-            100. * correct / len(test_loader.dataset)))
-
-
+        for parameters in model.parameters():  # model.parameters() but should be the same since it's the argument
+            return {'params': parameters,
+                    'model': model,
+                    'test_accuracy': test_accuracy}
 
 
 
