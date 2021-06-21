@@ -48,21 +48,13 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 1,
+                'epoch': 2,
                 # 'round': 1,
                 'delta': 1e-5,
                 'if_test': False
             }
         },        organization_ids=ids
     )
-
-
-    '''
-    Now we need to wait until all organizations(/nodes) finished
-    their partial. We do this by polling the server for results. It is
-    also possible to subscribe to a websocket channel to get status
-    updates.
-    '''
 
     info("Waiting for parameters")
     task_id = task.get("id")
@@ -75,18 +67,18 @@ def master(client, data):
     # # Once we now the partials are complete, we can collect them.
     info("Obtaining parameters from all nodes")
 
-    results = client.get_results(task_id=task.get("id"))
-
-    # for parameters in results:
-    #     print(parameters)
+    results_train = client.get_results(task_id=task.get("id"))
 
     global_sum = 0
     global_count = 0
 
-    for output in results:
+    for output in results_train:
         # print(len(output))
         global_sum += output["params"]
         global_count += len(global_sum)
+
+    # for parameters in results:
+    #     print(parameters)
 
     averaged_parameters = global_sum / global_count
 
@@ -103,6 +95,26 @@ def master(client, data):
 
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
+
+    # info('Federated averaging w/ averaged_parameters')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'train_test',
+    #         'kwargs': {
+    #             'parameters': averaged_parameters,
+    #             'model': output['model'],
+    #             'device': device,
+    #             'log_interval': 10,
+    #             'local_dp': True,
+    #             'return_params': True,
+    #             'epoch': 5,
+    #             # 'round': 1,
+    #             'delta': 1e-5,
+    #             'if_test': False
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
@@ -128,4 +140,5 @@ def master(client, data):
     for output in results:
         acc = output["test_accuracy"]
     return acc
+
 

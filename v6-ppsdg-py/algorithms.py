@@ -9,16 +9,24 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from opacus import PrivacyEngine
-from .v6simplemodel import Net
 from sklearn.model_selection import train_test_split
-
-# Own modules
-from .central import initialize_training
 
 
 # training of the model
 def RPC_train_test(data, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test):
-    """Compute the average partial
+    """
+
+    :param data:
+    :param model:
+    :param parameters:
+    :param device:
+    :param log_interval:
+    :param local_dp:
+    :param return_params:
+    :param epoch:
+    :param delta:
+    :param if_test:
+    :return:
     """
     train = data
     train_batch_size = 64
@@ -44,20 +52,7 @@ def RPC_train_test(data, model, parameters, device, log_interval, local_dp, retu
     # if input is train.pt
     # train_loader = data
 
-    learning_rate = 0.01
-
-    # if local_dp == True:
-    # initializing optimizer and scheduler
-    optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.5)
-
-    if local_dp:
-        privacy_engine = PrivacyEngine(model, batch_size=64,
-                                       sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
-                                       max_grad_norm=1.0, )
-        privacy_engine.attach(optimizer)
-
-
-    test_accuracy=0
+    test_accuracy = 0
     if if_test:
         model.eval()
 
@@ -87,6 +82,18 @@ def RPC_train_test(data, model, parameters, device, log_interval, local_dp, retu
             test_accuracy = 100. * correct / len(test_loader.dataset)
 
     else:
+        learning_rate = 0.01
+
+        # if local_dp == True:
+        # initializing optimizer and scheduler
+        optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.5)
+
+        if local_dp:
+            privacy_engine = PrivacyEngine(model, batch_size=64,
+                                           sample_size=60000, alphas=range(2, 32), noise_multiplier=1.3,
+                                           max_grad_norm=1.0, )
+            privacy_engine.attach(optimizer)
+
         model.train()
         for epoch in range(1, epoch + 1):
             for batch_idx, (data, target) in enumerate(train_loader):
@@ -114,6 +121,9 @@ def RPC_train_test(data, model, parameters, device, log_interval, local_dp, retu
             if local_dp:
                 epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
                 print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
+
+        # detach privacy engine from optimizer. Multiple attachments lead to error
+        privacy_engine.detach()
 
     if return_params:
         for parameters in model.parameters():  # model.parameters() but should be the same since it's the argument
