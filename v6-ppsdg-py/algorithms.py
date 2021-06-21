@@ -16,8 +16,9 @@ from torchvision import datasets, transforms
 from .central import initialize_training
 import data as dat
 
+
 # training of the model
-def RPC_train_test(data, dat, dat2, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test):
+def RPC_train_test(data, organizations, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test):
     """
     :param data:
     :param model:
@@ -31,8 +32,23 @@ def RPC_train_test(data, dat, dat2, model, parameters, device, log_interval, loc
     :param if_test:
     :return:
     """
-    train_loader = torch.utils.data.DataLoader(dat, batch_size=64, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(dat2, batch_size=64, shuffle=True)
+
+    dataset_shuffled = data
+
+    train_test_split = [0.8, 0.2]
+
+    # We need to use partition 2 for train_set and partition 1
+    # for test_set because EqualPartitionEachClass start its encode from worker node 1
+    train_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
+        dataset_shuffled, train_test_split, 2)
+    test_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
+        dataset_shuffled, train_test_split, 1)
+
+    n_nodes = len(organizations)
+
+    df_dist_fullyIID_cnt, df_dist_fullyIID_indexes = dat.data_dist_FullyIID_each(train_set, n_nodes)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True)
 
     # if input is train.pt
     # train_loader = data
@@ -108,7 +124,8 @@ def RPC_train_test(data, dat, dat2, model, parameters, device, log_interval, loc
                 print("\nEpsilon {}, best alpha {}".format(epsilon, alpha))
 
         # detach privacy engine from optimizer. Multiple attachments lead to error
-        privacy_engine.detach()
+        if local_dp:
+            privacy_engine.detach()
 
     if return_params:
         for parameters in model.parameters():  # model.parameters() but should be the same since it's the argument

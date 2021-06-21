@@ -10,6 +10,20 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torchvision import datasets, transforms
 import prettytable as pt
+import data as dat
+
+
+# Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+train_set_pre = datasets.MNIST('./data', train=True, download=True, transform=transform)
+test_set_pre = datasets.MNIST('./data', train=False, transform=transform)
+# Merge train set and test set as the whole MNIST dataset (70000 samples)
+dataset_mnist_all = dat.MergeDatasets([train_set_pre, test_set_pre])
+
+# Shuffle the whole MNIST dataset (70000 samples)
+dataset_mnist_shuffled = dat.ShuffleDataset(dataset_mnist_all)
+# Save the shuffled whole MNIST dataset
+torch.save(dataset_mnist_shuffled, './mnist_shuffled.pt')
 
 def CreateMapLabelIndexes(dataset):
     label_indexes_map = {}
