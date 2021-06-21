@@ -10,7 +10,36 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torchvision import datasets, transforms
 import prettytable as pt
-import data as dat
+
+
+def MergeDatasets(dataset_list):
+    # Exit if there is no datasets to be merged
+    if (len(dataset_list)==0):
+        print("No datasets to be merged")
+        sys.exit(1)
+    else:
+        pass
+    merged_dataset = copy.deepcopy(dataset_list[0])
+    merged_dataset.targets = torch.cat(list(x.targets for x in dataset_list))
+    merged_dataset.data = torch.cat(list(x.data for x in dataset_list))
+    # merged dataset will have different orders for samples (like combining several lists)
+    # eg: [1,34,67] + [23,53,42] = [1,34,67,23,53,42]
+    # but data and indexes for the samples are the same
+    return merged_dataset
+
+
+# Merge index of samples for a dataset (eg: shuffle full MNIST dataset = 60000 training samples + 10000 testing samples)
+def ShuffleDataset(dataset):
+    # Exit if there is the dataset is empty
+    if (len(dataset)==0):
+        sys.exit(1)
+    else:
+        pass
+    shuffled_dataset = copy.deepcopy(dataset)
+    indices = list(range(len(dataset)))
+    # np.random.seed(10242048)
+    # np.random.seed()
+    np.random.shuffle(indices)
 
 
 # Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
@@ -18,10 +47,10 @@ transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1
 train_set_pre = datasets.MNIST('./data', train=True, download=True, transform=transform)
 test_set_pre = datasets.MNIST('./data', train=False, transform=transform)
 # Merge train set and test set as the whole MNIST dataset (70000 samples)
-dataset_mnist_all = dat.MergeDatasets([train_set_pre, test_set_pre])
+dataset_mnist_all = MergeDatasets([train_set_pre, test_set_pre])
 
 # Shuffle the whole MNIST dataset (70000 samples)
-dataset_mnist_shuffled = dat.ShuffleDataset(dataset_mnist_all)
+dataset_mnist_shuffled = ShuffleDataset(dataset_mnist_all)
 # Save the shuffled whole MNIST dataset
 torch.save(dataset_mnist_shuffled, './mnist_shuffled.pt')
 
@@ -68,33 +97,7 @@ def GetPartitionedDataset(dataset, df_indexes_per_class, partition_index):
     return dataset_partition
 
 # Merge a list of same-type dataset (eg: merge 3 MNIST-type datasets)
-def MergeDatasets(dataset_list):
-    # Exit if there is no datasets to be merged
-    if (len(dataset_list)==0):
-        print("No datasets to be merged")
-        sys.exit(1)
-    else:
-        pass
-    merged_dataset = copy.deepcopy(dataset_list[0])
-    merged_dataset.targets = torch.cat(list(x.targets for x in dataset_list))
-    merged_dataset.data = torch.cat(list(x.data for x in dataset_list))
-    # merged dataset will have different orders for samples (like combining several lists)
-    # eg: [1,34,67] + [23,53,42] = [1,34,67,23,53,42]
-    # but data and indexes for the samples are the same
-    return merged_dataset
 
-# Merge index of samples for a dataset (eg: shuffle full MNIST dataset = 60000 training samples + 10000 testing samples)
-def ShuffleDataset(dataset):
-    # Exit if there is the dataset is empty
-    if (len(dataset)==0):
-        sys.exit(1)
-    else:
-        pass
-    shuffled_dataset = copy.deepcopy(dataset)
-    indices = list(range(len(dataset)))
-    # np.random.seed(10242048)
-    # np.random.seed()
-    np.random.shuffle(indices)
 
     shuffled_dataset.targets = shuffled_dataset.targets[indices]
     shuffled_dataset.data = shuffled_dataset.data[indices]
