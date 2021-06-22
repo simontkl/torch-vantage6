@@ -49,14 +49,14 @@
 # 4) Wait for central container to finish (polling)
 # 5) Obtain the results
 # """
-# import time
+import time
 #
 from vantage6.client import Client
 #
 # 1. authenticate to the central server
 client = Client(
-    host="127.0.0.1",
-    port=5000,
+    host="http://172.17.0.2",
+    port=5001,
     path="/api"
 )
 
@@ -66,46 +66,35 @@ client.setup_encryption(None)
 # # 2. Prepare input for the dsummary Docker image (algorithm)
 input_ = {
     "method": "master",
-    "args": [],
-    "kwargs": {
-        "decimal": ",",
-        "seperator": ";",
-        "columns": {
-            "patient_id": "Int64",
-            "age": "Int64",
-            "weight": "float64",
-            "stage": "category",
-            "cat": "category",
-            "hot_encoded": "Int64"
-        }
-    }
 }
+
+
 #
 # # 3. post the task to the server
 task = client.post_task(
-    name="summary",
-    image="docker-registry.distributedlearning.ai/dsummary",
-    collaboration_id=3,
-    # organization_ids=[3],  # specify where the central container should run!
+    name="FedAvg",
+    image="docker-registry.distributedlearning.ai/v6-ppsdg-py",
+    collaboration_id=1,
+    organization_ids=[4],  # specify where the central container should run! # 4 is the newly created node with the api key that the node config uses
     input_=input_
 )
 #
 # # 4. poll if central container is finished
-# task_id = task.get("id")
-# print(f"task id={task_id}")
-#
-# task = client.request(f"task/{task_id}")
-# while not task.get("complete"):
-#     task = client.request(f"task/{task_id}")
-#     print("Waiting for results...")
-#     time.sleep(1)
+task_id = task.get("id")
+print(f"task id={task_id}")
+
+task = client.request(f"task/{task_id}")
+while not task.get("complete"):
+    task = client.request(f"task/{task_id}")
+    print("Waiting for results...")
+    time.sleep(1)
 #
 # # 5. obtain the finished results
 results = client.get_results(task_id=task.get("id"))
 #
 # # e.g. print the results per node
-# for result in results:
-#     node_id = result.get("node")
-#     print("-"*80)
-#     print(f"Results from node = {node_id}")
-#     print(result.get("result"))
+for result in results:
+    node_id = result.get("node")
+    print("-"*80)
+    print(f"Results from node = {node_id}")
+    print(result.get("result"))

@@ -10,7 +10,6 @@ from .v6simplemodel import Net
 from vantage6.tools.util import info
 
 
-
 def master(client, data):
     """Master algorithm.
     The master algorithm is the chair of the Round Robin, which makes
@@ -30,7 +29,7 @@ def master(client, data):
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu") #
+    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else "cpu"
 
     # clear cuda memory
     torch.cuda.empty_cache()
@@ -52,7 +51,7 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 2,
+                'epoch': 1,
                 # 'round': 1,
                 'delta': 1e-5,
                 'if_test': False
@@ -100,11 +99,12 @@ def master(client, data):
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
 
-    # info('Federated averaging w/ averaged_parameters')
+    # info('Testing first round')
     # task = client.create_new_task(
     #     input_={
     #         'method': 'train_test',
     #         'kwargs': {
+    #             'organizations': organizations,
     #             'parameters': averaged_parameters,
     #             'model': output['model'],
     #             'device': device,
@@ -114,11 +114,19 @@ def master(client, data):
     #             'epoch': 5,
     #             # 'round': 1,
     #             'delta': 1e-5,
-    #             'if_test': False
+    #             'if_test': True
     #         }
     #     },
     #     organization_ids=ids
     # )
+    #
+    # results_test = client.get_results(task_id=task.get("id"))
+    #
+    # for output in results_test:
+    #     acc = output["test_accuracy"]
+    # return 'Accuracy: {:.2f}%'.format(acc)
+
+
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(
@@ -130,7 +138,7 @@ def master(client, data):
                 'model': output['model'],
                 'device': device,
                 'log_interval': 10,
-                'local_dp': False,
+                'local_dp': True,
                 'return_params': True,
                 'epoch': 1,
                 # 'round': 1,
@@ -163,6 +171,12 @@ def master(client, data):
     )
 
     results = client.get_results(task_id=task.get("id"))
+
     for output in results:
         acc = output["test_accuracy"]
-    return acc
+    return 'Accuracy: {:.2f}%'.format(acc)
+
+# print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+#                 test_loss, correct, len(test_loader.dataset),
+#                 100. * correct / len(test_loader.dataset)))
+#             test_accuracy = 100. * correct / len(test_loader.dataset)

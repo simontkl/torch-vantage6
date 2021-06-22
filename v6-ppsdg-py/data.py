@@ -42,18 +42,6 @@ def ShuffleDataset(dataset):
     np.random.shuffle(indices)
 
 
-# Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-train_set_pre = datasets.MNIST('./data', train=True, download=True, transform=transform)
-test_set_pre = datasets.MNIST('./data', train=False, transform=transform)
-# Merge train set and test set as the whole MNIST dataset (70000 samples)
-dataset_mnist_all = MergeDatasets([train_set_pre, test_set_pre])
-
-# Shuffle the whole MNIST dataset (70000 samples)
-dataset_mnist_shuffled = ShuffleDataset(dataset_mnist_all)
-# Save the shuffled whole MNIST dataset
-torch.save(dataset_mnist_shuffled, './mnist_shuffled.pt')
-
 def CreateMapLabelIndexes(dataset):
     label_indexes_map = {}
     label_cnt_map = {}
@@ -63,6 +51,7 @@ def CreateMapLabelIndexes(dataset):
         label_indexes_map[label.item()] = label_indexes
         label_cnt_map[label.item()] = len(label_indexes)
     return label_indexes_map, label_cnt_map
+
 
 def GetPartitionedDataset(dataset, df_indexes_per_class, partition_index):
     valid_idx= torch.cat(list(df_indexes_per_class.loc[partition_index]))
@@ -98,11 +87,11 @@ def GetPartitionedDataset(dataset, df_indexes_per_class, partition_index):
 
 # Merge a list of same-type dataset (eg: merge 3 MNIST-type datasets)
 
-
     shuffled_dataset.targets = shuffled_dataset.targets[indices]
     shuffled_dataset.data = shuffled_dataset.data[indices]
 
     return shuffled_dataset
+
 
 def data_dist_FullyIID_each(dataset, n_workers):
     partition_pcts = [1/n_workers]*n_workers
@@ -132,7 +121,8 @@ def EqualPartitionEachClass(dataset, partition_pcts, return_part_index=1):
     df_samples_cnt_per_class['total'] = df_samples_cnt_per_class.apply(lambda x: x.sum(),axis=1)
     # print(df_samples_cnt_per_class)
 
-# Build a dataframe containing which indexes per class are in each node. Rows are partition_index, columns are class labels.
+    # Build a dataframe containing which indexes per class are in each node.
+    # Rows are partition_index, columns are class labels.
     df_indexes_per_class = pd.DataFrame(index=range(1,len(partition_pcts)+1), columns=labels.tolist())
     for label in labels:
         for i in list(df_samples_cnt_per_class.index.values) :
@@ -150,3 +140,23 @@ def EqualPartitionEachClass(dataset, partition_pcts, return_part_index=1):
 
     return dataset_partition, df_samples_cnt_per_class, df_indexes_per_class
     # return df_samples_cnt_per_class, df_indexes_per_class
+
+
+
+    # # Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
+    # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    # train_set_pre = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    # test_set_pre = datasets.MNIST('./data', train=False, transform=transform)
+    # # Merge train set and test set as the whole MNIST dataset (70000 samples)
+    # dataset_mnist_all = MergeDatasets([train_set_pre, test_set_pre])
+    #
+    # # Shuffle the whole MNIST dataset (70000 samples)
+    # dataset_mnist_shuffled = ShuffleDataset(dataset_mnist_all)
+    # # Save the shuffled whole MNIST dataset
+    # torch.save(dataset_mnist_shuffled, './dataset_shuffled.pt')
+
+    # trainset_cifar = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+
+    #
+    # testset_cifar = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+

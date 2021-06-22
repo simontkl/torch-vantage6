@@ -50,8 +50,10 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True)
 
-    # if input is train.pt
-    # train_loader = data
+    # trainloader_cifar = torch.utils.data.DataLoader(trainset, batch_size=4,
+    #                                           shuffle=True, num_workers=2)
+    # testloader_cifar = torch.utils.data.DataLoader(testset, batch_size=4,
+    #                                           shuffle=False, num_workers=2)
 
     test_accuracy = 0
     if if_test:
@@ -64,10 +66,10 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
                 # Send the local and target to the device (cpu/gpu) the model is at
                 data, target = data.to(device), target.to(device)
                 # Run the model on the local
-                batch_size = data.shape[0]
+                # batch_size = data.shape[0]
                 # print(batch_size)
-                data = data.reshape(batch_size, 28, 28)
-                data = data.unsqueeze(1)
+                # data = data.reshape(batch_size, 28, 28)
+                # data = data.unsqueeze(1)
                 output = model(data)
                 # Calculate the loss
                 test_loss += F.nll_loss(output, target, reduction='sum').item()
@@ -99,19 +101,24 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
         for epoch in range(1, epoch + 1):
             for batch_idx, (data, target) in enumerate(train_loader):
                 data, target = data.to(device), target.to(device)
+                # Clear gradient buffers
                 optimizer.zero_grad()
 
-                batch_size = data.shape[0]
+                # batch_size = data.shape[0]
                 # print(batch_size)
-                data = data.reshape(batch_size, 28, 28)
-                data = data.unsqueeze(1)
+                # data = data.reshape(batch_size, 28, 28)
+                # data = data.unsqueeze(1)
                 # print(data.shape)
                 # print(data.type())
                 # print(target.type())
-                output = model(data)
 
+                # Run the model on the data
+                output = model(data)
+                # Calculate the loss
                 loss = F.nll_loss(output, target)
+                # Calculate the gradients
                 loss.backward()
+                # Update model
                 optimizer.step()
 
                 if batch_idx % log_interval == 0:
@@ -139,12 +146,3 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
 
 
 
-
-
-# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-# trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-#                                           shuffle=True, num_workers=2)
-#
-# testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-# testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-#                                           shuffle=False, num_workers=2)
