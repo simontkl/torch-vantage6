@@ -56,7 +56,7 @@ from vantage6.client import Client
 # 1. authenticate to the central server
 client = Client(
     host="http://172.17.0.2",
-    port=5001,
+    port=3000,
     path="/api"
 )
 
@@ -66,6 +66,7 @@ client.setup_encryption(None)
 # # 2. Prepare input for the dsummary Docker image (algorithm)
 input_ = {
     "method": "master",
+    "kwargs": {'data_format': 'json'}
 }
 
 

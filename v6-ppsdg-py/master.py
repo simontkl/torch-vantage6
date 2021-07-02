@@ -7,6 +7,7 @@ Description: This module contains the master function which is responsible for t
 import time
 import torch
 from .v6simplemodel import Net
+from .cifarmodel import CNN
 from vantage6.tools.util import info
 
 
@@ -19,6 +20,8 @@ def master(client, data):
     # messages are stored in a log file which is send to the server when
     # either a task finished or crashes.
 
+    start_time = time.time()
+
     info('Collecting participating organizations')
 
     # Collect all organization that participate in this collaboration.
@@ -29,7 +32,7 @@ def master(client, data):
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else "cpu"
+    device = torch.device("cuda") #"cuda" if use_cuda else "cpu"
 
     # clear cuda memory
     torch.cuda.empty_cache()
@@ -52,9 +55,9 @@ def master(client, data):
                 'local_dp': True,
                 'return_params': True,
                 'epoch': 1,
-                # 'round': 1,
                 'delta': 1e-5,
-                'if_test': False
+                'if_test': False,
+                'cifar': False
             }
         }, organization_ids=ids
     )
@@ -99,57 +102,7 @@ def master(client, data):
     torch.cuda.empty_cache()
     # torch.cuda.clear_memory_allocated()
 
-    # info('Testing first round')
-    # task = client.create_new_task(
-    #     input_={
-    #         'method': 'train_test',
-    #         'kwargs': {
-    #             'organizations': organizations,
-    #             'parameters': averaged_parameters,
-    #             'model': output['model'],
-    #             'device': device,
-    #             'log_interval': 10,
-    #             'local_dp': True,
-    #             'return_params': True,
-    #             'epoch': 5,
-    #             # 'round': 1,
-    #             'delta': 1e-5,
-    #             'if_test': True
-    #         }
-    #     },
-    #     organization_ids=ids
-    # )
-    #
-    # results_test = client.get_results(task_id=task.get("id"))
-    #
-    # for output in results_test:
-    #     acc = output["test_accuracy"]
-    # return 'Accuracy: {:.2f}%'.format(acc)
-
-
-
-    info('Federated averaging w/ averaged_parameters')
-    task = client.create_new_task(
-        input_={
-            'method': 'train_test',
-            'kwargs': {
-                'organizations': organizations,
-                'parameters': averaged_parameters,
-                'model': output['model'],
-                'device': device,
-                'log_interval': 10,
-                'local_dp': True,
-                'return_params': True,
-                'epoch': 1,
-                # 'round': 1,
-                'delta': 1e-5,
-                'if_test': False
-            }
-        },
-        organization_ids=ids
-    )
-
-    info('Federated averaging w/ averaged_parameters')
+    info('Testing first round')
     task = client.create_new_task(
         input_={
             'method': 'train_test',
@@ -161,20 +114,76 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': False,
                 'return_params': True,
-                'epoch': 1,
+                'epoch': 5,
                 # 'round': 1,
                 'delta': 1e-5,
-                'if_test': True
+                'if_test': True,
+                'cifar': False
             }
         },
         organization_ids=ids
     )
 
-    results = client.get_results(task_id=task.get("id"))
+    results_test = client.get_results(task_id=task.get("id"))
 
-    for output in results:
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    for output in results_test:
         acc = output["test_accuracy"]
     return 'Accuracy: {:.2f}%'.format(acc)
+
+
+
+
+    # info('Federated averaging w/ averaged_parameters')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'train_test',
+    #         'kwargs': {
+    #             'organizations': organizations,
+    #             'parameters': averaged_parameters,
+    #             'model': output['model'],
+    #             'device': device,
+    #             'log_interval': 10,
+    #             'local_dp': True,
+    #             'return_params': True,
+    #             'epoch': 1,
+    #             'delta': 1e-5,
+    #             'if_test': False,
+    #             'cifar': False
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
+    #
+    # info('Federated averaging w/ averaged_parameters')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'train_test',
+    #         'kwargs': {
+    #             'organizations': organizations,
+    #             'parameters': averaged_parameters,
+    #             'model': output['model'],
+    #             'device': device,
+    #             'log_interval': 10,
+    #             'local_dp': False,
+    #             'return_params': True,
+    #             'epoch': 1,
+    #             'delta': 1e-5,
+    #             'if_test': True,
+    #             'cifar': False
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
+    #
+    # results = client.get_results(task_id=task.get("id"))
+    #
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    #
+    # for output in results:
+    #     acc = output["test_accuracy"]
+    # return 'Accuracy: {:.2f}%'.format(acc)
 
 # print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
 #                 test_loss, correct, len(test_loader.dataset),

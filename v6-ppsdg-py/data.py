@@ -141,7 +141,36 @@ def EqualPartitionEachClass(dataset, partition_pcts, return_part_index=1):
     return dataset_partition, df_samples_cnt_per_class, df_indexes_per_class
     # return df_samples_cnt_per_class, df_indexes_per_class
 
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
 
+def mnist_to_csv():
+    dataset_pt = torch.load("./data/dataset_shuffled.pt")
+    # dataset_pt = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    print(dataset_pt.data)
+    print(dataset_pt.data.shape)
+    b = dataset_pt.data.reshape(70000, -1)
+    np.savetxt('./data/tensor.csv', b, delimiter =',')
+    c = dataset_pt.targets.tolist()
+
+    p = np.loadtxt('./data/tensor.csv', delimiter=',')
+    df = pd.DataFrame(p.astype(int), columns=range(1,785))
+    df = pd.concat([pd.Series(c),df], axis=1)
+    df.to_csv("./data/mnist_dataset.csv", index=False)
+    print(df)
+
+def cifar_to_csv():
+    trainset_cifar = datasets.CIFAR10('./data', train=True, download=True, transform=transform)
+    # testset_cifar = datasets.CIFAR10('./data', train=False, download=True, transform=transform)
+
+    cifar_data = trainset_cifar.data.reshape(50000, -1)
+    print(cifar_data)
+
+    cifar_targets = trainset_cifar.targets
+
+    df = pd.DataFrame(cifar_data.astype(int))
+    df = pd.concat([pd.Series(cifar_targets), df], axis=1)
+    df.to_csv("./data/cifar_dataset.csv", index=False)
+    print(df)
 
     # # Load MNIST dataset from torchvision - train set (60000 samples) and test set (10000 samples)
     # transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])

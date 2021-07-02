@@ -11,6 +11,8 @@ import torch.optim as optim
 from opacus import PrivacyEngine
 from .v6simplemodel import Net
 from torchvision import datasets, transforms
+from sklearn.model_selection import train_test_split
+import psutil
 
 # Own modules
 from .central import initialize_training
@@ -18,7 +20,7 @@ import data as dat
 
 
 # training of the model
-def RPC_train_test(data, organizations, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test):
+def RPC_train_test(data, organizations, model, parameters, device, log_interval, local_dp, return_params, epoch, delta, if_test, cifar):
     """
     :param data:
     :param model:
@@ -33,22 +35,34 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
     :return:
     """
 
-    dataset_shuffled = data
+    train = data
+    print(train)
+    train_batch_size = 64
+    test_batch_size = 64
 
-    train_test_split = [0.8, 0.2]
+    # X = train
+    X = (train.iloc[:, 1:].values).astype('float32')
+    # Y = train
+    Y = train.iloc[:, 0].values
+    print(X.shape)
+    features_train, features_test, targets_train, targets_test = train_test_split(X, Y, test_size=0.2,
+                                                                                  random_state=42)
+    X_train = torch.from_numpy(features_train / 255.0)
+    X_test = torch.from_numpy(features_test / 255.0)
 
-    # We need to use partition 2 for train_set and partition 1
-    # for test_set because EqualPartitionEachClass start its encode from worker node 1
-    train_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
-        dataset_shuffled, train_test_split, 2)
-    test_set, train_test_partition_samples_cnt, train_test_partition_indexes = dat.EqualPartitionEachClass(
-        dataset_shuffled, train_test_split, 1)
+    Y_train = torch.from_numpy(targets_train).type(torch.LongTensor)
+    Y_test = torch.from_numpy(targets_test).type(torch.LongTensor)
 
-    n_nodes = len(organizations)
+    train = torch.utils.data.TensorDataset(X_train, Y_train)
+    test = torch.utils.data.TensorDataset(X_test, Y_test)
 
-    df_dist_fullyIID_cnt, df_dist_fullyIID_indexes = dat.data_dist_FullyIID_each(train_set, n_nodes)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=64, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=False)
+
+    # if input is train.pt
+    # train_loader = data
+
+    learning_rate = 0.01
 
     # trainloader_cifar = torch.utils.data.DataLoader(trainset, batch_size=4,
     #                                           shuffle=True, num_workers=2)
@@ -66,10 +80,16 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
                 # Send the local and target to the device (cpu/gpu) the model is at
                 data, target = data.to(device), target.to(device)
                 # Run the model on the local
-                # batch_size = data.shape[0]
+                batch_size = data.shape[0]
                 # print(batch_size)
-                # data = data.reshape(batch_size, 28, 28)
-                # data = data.unsqueeze(1)
+                # if cifar:
+                #     data = data.reshape(batch_size, 32, 32, 3)
+                #     data = data.unsqueeze(0)
+                #     data = data.reshape(batch_size, 3, 32, 32)
+                #     # data = data.unsqueeze(1)
+                # else:
+                data = data.reshape(batch_size, 28, 28)
+                data = data.unsqueeze(1)
                 output = model(data)
                 # Calculate the loss
                 test_loss += F.nll_loss(output, target, reduction='sum').item()
@@ -104,10 +124,19 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
                 # Clear gradient buffers
                 optimizer.zero_grad()
 
-                # batch_size = data.shape[0]
+                batch_size = data.shape[0]
                 # print(batch_size)
-                # data = data.reshape(batch_size, 28, 28)
-                # data = data.unsqueeze(1)
+
+                # if cifar:
+                #     data = data.reshape(batch_size, 32, 32, 3)
+                #     data = data.unsqueeze(0)
+                #     data = data.reshape(batch_size, 3, 32, 32)
+                #     # data = data.unsqueeze(1)
+                # else:
+                data = data.reshape(batch_size, 28, 28)
+                data = data.unsqueeze(1)
+                # data = data.reshape(batch_size, 3, 32, 32)
+                # data = data.unsqueeze(0)
                 # print(data.shape)
                 # print(data.type())
                 # print(target.type())
@@ -124,7 +153,7 @@ def RPC_train_test(data, organizations, model, parameters, device, log_interval,
                 if batch_idx % log_interval == 0:
                     print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(train_loader.dataset),
-                        100. * batch_idx / len(train_loader), loss.item()))
+                        100. * batch_idx / len(train_loader), loss.item()), psutil.cpu_percent(), psutil.virtual_memory().percent)
 
             if local_dp:
                 epsilon, alpha = optimizer.privacy_engine.get_privacy_spent(delta)
