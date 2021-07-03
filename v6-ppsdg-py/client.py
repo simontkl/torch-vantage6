@@ -56,7 +56,7 @@ from vantage6.client import Client
 # 1. authenticate to the central server
 client = Client(
     host="http://172.17.0.2",
-    port=3000,
+    port=5001,
     path="/api"
 )
 
@@ -66,7 +66,7 @@ client.setup_encryption(None)
 # # 2. Prepare input for the dsummary Docker image (algorithm)
 input_ = {
     "method": "master",
-    "kwargs": {'data_format': 'json'}
+    # "kwargs": {'data_format': 'json'}
 }
 
 
@@ -74,7 +74,7 @@ input_ = {
 # # 3. post the task to the server
 task = client.post_task(
     name="FedAvg",
-    image="docker-registry.distributedlearning.ai/v6-ppsdg-py",
+    image="harbor2.vantage6.ai/torch/torch.v6",
     collaboration_id=1,
     organization_ids=[4],  # specify where the central container should run! # 4 is the newly created node with the api key that the node config uses
     input_=input_
