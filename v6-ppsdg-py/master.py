@@ -54,7 +54,7 @@ def master(client, data):
                 'log_interval': 10,
                 'local_dp': True,
                 'return_params': True,
-                'epoch': 50,
+                'epoch': 1,
                 'delta': 1e-5,
                 'if_test': False,
                 'cifar': False
@@ -135,26 +135,26 @@ def master(client, data):
 
 
 
-    info('Federated averaging w/ averaged_parameters')
-    task = client.create_new_task(
-        input_={
-            'method': 'train_test',
-            'kwargs': {
-                'organizations': organizations,
-                'parameters': averaged_parameters,
-                'model': output['model'],
-                'device': device,
-                'log_interval': 10,
-                'local_dp': True,
-                'return_params': True,
-                'epoch': 50,
-                'delta': 1e-5,
-                'if_test': False,
-                'cifar': False
-            }
-        },
-        organization_ids=ids
-    )
+    # info('Federated averaging w/ averaged_parameters')
+    # task = client.create_new_task(
+    #     input_={
+    #         'method': 'train_test',
+    #         'kwargs': {
+    #             'organizations': organizations,
+    #             'parameters': averaged_parameters,
+    #             'model': output['model'],
+    #             'device': device,
+    #             'log_interval': 10,
+    #             'local_dp': False,
+    #             'return_params': True,
+    #             'epoch': 1,
+    #             'delta': 1e-5,
+    #             'if_test': False,
+    #             'cifar': False,
+    #         }
+    #     },
+    #     organization_ids=ids
+    # )
 
     info('Federated averaging w/ averaged_parameters')
     task = client.create_new_task(

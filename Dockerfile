@@ -11,7 +11,7 @@ FROM harbor.vantage6.ai/algorithms/algorithm-base
 
 # Change this to the package name of your project. This needs to be the same
 # as what you specified for the name in the `setup.py`.
-ARG PKG_NAME="v6-ppsdg-py"
+ARG PKG_NAME="C:\\Users\\simon\\PycharmProjects\\torch-vantage6\\v6-ppsdg-py"
 
 # This will install your algorithm into this image.
 COPY . /app
