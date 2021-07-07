@@ -1,10 +1,9 @@
-setuptools~=52.0.0
 vantage6~=2.1.1
 torch~=1.9.0
-opacus~=0.13.0
 pandas~=1.2.4
 numpy~=1.20.3
-prettytable~=2.1.0
 torchvision~=0.10.0
 psutil~=5.8.0
 scikit-learn~=0.24.2
+vantage6.client~=2.1.0
+requests~=2.23.0

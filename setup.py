@@ -20,8 +20,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 # Here you specify the meta-local of your package. The `name` argument is
 # needed in some other steps.
 setup(
-    name='ppsdg-v6',
-    version="2.1.0",
+    name='v6-ppsdg-py',
+    version="2.1.1",
     description='ppsdg project with vantage6 implementation',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -29,7 +29,7 @@ setup(
     packages=find_packages(),
     python_requires='>=3.7',
     install_requires=[
-        # 'vantage6-client'
+
     ]
     # ,
     # extras_require={
