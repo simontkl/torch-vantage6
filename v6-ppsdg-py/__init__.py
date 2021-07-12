@@ -29,7 +29,7 @@ def master(client, data, ids):
 
     # # Determine the device to train on
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu") #"cuda" if use_cuda else "cpu"
+    device = torch.device("cuda") #"cuda" if use_cuda else "cpu"
 
     # clear cuda memory
     torch.cuda.empty_cache()
@@ -175,8 +175,9 @@ def master(client, data, ids):
     print("--- %s seconds ---" % (time.time() - start_time))
 
     for output in results:
-        acc = output["test_accuracy"]
-    return 'Accuracy: {:.2f}%'.format(acc)
+        acc = output["test_accuracy"] # return output["test_accuracy"]
+
+    return 'Accuracy: {:.2f}%'.format(acc) #(acc)
 
 # print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
 #                 test_loss, correct, len(test_loader.dataset),

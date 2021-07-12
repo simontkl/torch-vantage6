@@ -3,7 +3,7 @@ import time
 from vantage6.client import Client
 
 client = Client(
-    host="http://172.17.0.2",
+    host="http://localhost",
     port=5001,
     path="/api"
 )
@@ -24,11 +24,20 @@ input_ = {
 # # 3. post the task to the server post_task
 task = client.post_task(
     name="FedAvg",
-    image="v6-ppsdg-py",
+    image="v6-cuda-py",
     collaboration_id=1,
     organization_ids=[1],  # specify where the central container should run! # 4 is the newly created node with the api key that the node config uses
     input_=input_
 )
+
+# task = client.task.create(
+#     name="FedAvg",
+#     image="v6-acc2-py",
+#     description="first run",
+#     input=input_,
+#     organizations=[1],
+#     collaboration=1
+# )
 
 # # 4. poll if central container is finished
 task_id = task.get("id") #"id"
@@ -42,7 +51,7 @@ while not task.get("complete"):
 
 # # 5. obtain the finished results
 results = client.get_results(task_id=task.get("id"))
-
+# results = client.result.get(task_id=task.get("id"))
 
 # e.g. print the results per node
 for result in results:

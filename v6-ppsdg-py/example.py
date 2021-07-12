@@ -11,7 +11,10 @@ org_ids = ids = [organization["id"] for organization in organizations]
 
 master_task = client.create_new_task({
     "master": 1,
-    "method": "master"
+    "method": "master",
+    "kwargs": {
+        "ids": 0
+    }
     },
     [org_ids[0]]
 )
